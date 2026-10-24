@@ -4,7 +4,7 @@
 <meta name="description" content="Retro bowling scorekeeper with shared match history and leaderboards.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Righteous&family=Shrikhand&family=Yellowtail&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Courier+Prime:wght@400;700&family=Righteous&family=Shrikhand&family=Yellowtail&display=swap">
 <link rel="stylesheet" href="src/styles.css">
 <!-- head:end -->
 <div class="app">
@@ -38,6 +38,41 @@
         <use href="#art-pin" x="236" y="100" width="36" height="90" transform="rotate(78 254 145)"/>
         <path class="a-line a-speed" d="M14 132h44M6 150h46M22 168h40"/>
         <use href="#art-ball" x="62" y="104" width="86" height="86"/>
+      </symbol>
+      <!-- Matchbook-cover pop-ups: a dry-brush banner and two lane scenes on a halftone floor. -->
+      <filter id="art-torn" x="-5%" y="-10%" width="110%" height="120%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.05 0.3" numOctaves="2" seed="3"/>
+        <feDisplacementMap in="SourceGraphic" scale="6"/>
+      </filter>
+      <pattern id="art-dots" width="7" height="7" patternUnits="userSpaceOnUse"><circle class="a-dot" cx="3.5" cy="3.5" r="1.9"/></pattern>
+      <linearGradient id="art-fade-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      <mask id="art-fade" maskContentUnits="objectBoundingBox"><rect width="1" height="1" fill="url(#art-fade-grad)"/></mask>
+      <symbol id="art-brush" viewBox="0 0 300 80" preserveAspectRatio="none">
+        <path class="a-brush" filter="url(#art-torn)" d="M10 20C60 9 140 14 210 8c34-3 62-4 82 3l-9 9 14 8-12 9 11 10-14 9 9 9c-50 8-140 4-210 11-30 3-50 4-64-1l9-10-12-8 11-9-13-10 12-9-9-9Z"/>
+        <g class="a-brush"><circle cx="294" cy="64" r="3"/><circle cx="6" cy="12" r="2.4"/><circle cx="284" cy="6" r="1.8"/></g>
+      </symbol>
+      <symbol id="art-scene-strike" viewBox="0 0 240 150">
+        <rect class="a-floor" y="98" width="240" height="52"/>
+        <rect class="a-halftone" y="98" width="240" height="22" fill="url(#art-dots)" mask="url(#art-fade)"/>
+        <ellipse class="a-ink a-shadow" cx="58" cy="121" rx="34" ry="6" filter="url(#art-rough)"/>
+        <path class="a-line a-speed" d="M2 74h22M0 90h18M8 106h14"/>
+        <path class="a-line a-burst" d="M120 22 112 8M156 12l2-12M196 22l12-10M216 62l16-4M96 52l-14-6"/>
+        <use href="#art-pin" x="100" y="24" width="30" height="76" transform="rotate(-38 115 62)"/>
+        <use href="#art-pin" x="172" y="18" width="30" height="76" transform="rotate(42 187 56)"/>
+        <use href="#art-pin" x="146" y="4" width="32" height="80" transform="rotate(14 162 44)"/>
+        <use href="#art-pin" x="124" y="30" width="34" height="84" transform="rotate(-10 141 72)"/>
+        <use href="#art-pin" x="178" y="78" width="28" height="70" transform="rotate(80 192 113)"/>
+        <use href="#art-ball" x="26" y="62" width="62" height="62"/>
+      </symbol>
+      <symbol id="art-scene-spare" viewBox="0 0 240 150">
+        <rect class="a-floor" y="98" width="240" height="52"/>
+        <rect class="a-halftone" y="98" width="240" height="22" fill="url(#art-dots)" mask="url(#art-fade)"/>
+        <ellipse class="a-ink a-shadow" cx="124" cy="121" rx="30" ry="5.5" filter="url(#art-rough)"/>
+        <path class="a-line a-speed" d="M44 76h40M36 92h44M52 108h28"/>
+        <path class="a-line a-burst" d="M168 26l-6-14M204 24l10-12M226 70l14-2"/>
+        <use href="#art-pin" x="176" y="20" width="32" height="80" transform="rotate(24 192 60)"/>
+        <use href="#art-pin" x="196" y="66" width="28" height="70" transform="rotate(68 210 101)"/>
+        <use href="#art-ball" x="94" y="64" width="60" height="60"/>
       </symbol>
       <symbol id="art-trophy" viewBox="0 0 100 120">
         <path class="a-line a-none" d="M26 20H11c0 20 9 27 17 28M74 20h15c0 20-9 27-17 28"/>
