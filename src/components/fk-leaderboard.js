@@ -3,7 +3,7 @@
  * <fk-leaderboard> — podiums for pins, wins, games, plus a full stat sheet.
  * Property: games (SavedGame[]).
  */
-import { h } from "../dom.js";
+import { h, art } from "../dom.js";
 import { aggregate, filterByPeriod, topBowlers } from "../stats.js";
 
 /** @typedef {import("../stats.js").SavedGame} SavedGame */
@@ -82,6 +82,7 @@ export class FkLeaderboard extends HTMLElement {
       this.replaceChildren(
         tabs,
         h("div", { class: "empty" },
+          h("span", { class: "print-badge" }, art("art-trophy", "empty__art", "0 0 100 120")),
           h("p", { class: "empty__title", text: "No scores on the board yet" }),
           h("p", { text: "Finish a game and tap Save to history. The top three in each category land here." }),
         ),

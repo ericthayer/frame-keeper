@@ -4,7 +4,7 @@
  * Property: games (SavedGame[]), canDelete.
  * Events: "fk-share" {id}, "fk-delete" {id}, "fk-rematch" {names}.
  */
-import { h, emit, formatDate } from "../dom.js";
+import { h, emit, formatDate, art } from "../dom.js";
 import { gameResults } from "../stats.js";
 import "./fk-scoreboard.js";
 
@@ -32,6 +32,7 @@ export class FkHistory extends HTMLElement {
     if (!this.#games.length) {
       this.replaceChildren(
         h("div", { class: "empty" },
+          h("span", { class: "print-badge" }, art("art-sheet", "empty__art", "0 0 150 110")),
           h("p", { class: "empty__title", text: "No games in the books" }),
           h("p", { text: "Saved games show up here for everyone in the league, with the full score sheet." }),
         ),

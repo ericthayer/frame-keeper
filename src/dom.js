@@ -31,6 +31,25 @@ export function h(tag, props = {}, ...children) {
 }
 
 /**
+ * Decorative illustration from the page's SVG sprite (#art-*).
+ * @param {string} id
+ * @param {string} className
+ * @param {string} viewBox
+ * @returns {SVGSVGElement}
+ */
+export function art(id, className, viewBox) {
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = /** @type {SVGSVGElement} */ (document.createElementNS(ns, "svg"));
+  svg.setAttribute("class", className);
+  svg.setAttribute("viewBox", viewBox);
+  svg.setAttribute("aria-hidden", "true");
+  const use = document.createElementNS(ns, "use");
+  use.setAttribute("href", `#${id}`);
+  svg.append(use);
+  return svg;
+}
+
+/**
  * Fire a typed, bubbling custom event from a component.
  * @template T
  * @param {HTMLElement} el

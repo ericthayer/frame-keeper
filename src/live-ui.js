@@ -43,7 +43,7 @@ export function initLive({ session, toast, celebrate, show }) {
     el.start.hidden = sharing;
     el.panel.hidden = !sharing;
     if (host.state) el.code.textContent = host.state.code;
-    el.watchForm.hidden = !available;
+    el.watchForm.hidden = !available || !!session.game;
   };
   host.onChange = render;
 

@@ -27,6 +27,7 @@ const $ = (id) => /** @type {T} */ (document.getElementById(id));
 const ui = {
   setup: /** @type {import("./components/fk-setup.js").FkSetup} */ ($("setup")),
   live: $("live"),
+  matchbook: $("matchbook"),
   board: /** @type {import("./components/fk-scoreboard.js").FkScoreboard} */ ($("board")),
   pad: /** @type {import("./components/fk-pinpad.js").FkPinpad} */ ($("pad")),
   nowName: $("nowup-name"),
@@ -71,7 +72,8 @@ function show(name, focus = false) {
   const watchCode = name.startsWith("watch-") ? normalizeCode(name.slice(6)) : null;
   const view = watchCode ? "watch" : VIEWS.includes(name) ? name : "lanes";
   const hash = watchCode ? `watch-${watchCode}` : view;
-  for (const el of ui.views) el.hidden = el.id !== view;
+  // Sections are "view-*" so the route hash never triggers an anchor jump.
+  for (const el of ui.views) el.hidden = el.id !== `view-${view}`;
   for (const tab of ui.tabs) tab.setAttribute("aria-current", tab.dataset.view === view ? "page" : "false");
   if (location.hash.slice(1) !== hash) history.replaceState(null, "", `#${hash}`);
   live?.setWatching(watchCode);
@@ -96,6 +98,7 @@ function toast(msg) {
 function renderGame() {
   const g = session.game;
   ui.setup.hidden = !!g;
+  ui.matchbook.hidden = !!g;
   ui.live.hidden = !g;
   if (!g) return;
 

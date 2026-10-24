@@ -13,6 +13,7 @@ A 70s-alley bowling scorekeeper for league night. It scores 10-frame games, save
 | Turn flow | Moves to the next bowler when a frame ends. Tap a name to change who's up, tap a finished frame to fix it, and Undo backs out the last ball or edit. |
 | Game night | Autosaves the game in progress on the phone, keeps the screen awake, and plays marquee celebrations for strikes, spares, turkeys, gutters and 300 games (vibration where supported). |
 | History | Shared match history with the full score sheet, Share (system share sheet or copy to clipboard), Rematch, and Delete with a confirm step. |
+| Live lanes | On the Netlify site, the scorekeeper taps **Share live** to get a 4-letter lane code. Anyone can open `#watch-CODE`, or type the code on the Lanes screen, to follow the scoreboard on their own phone. It updates about every 2 seconds and shows the strike and spare celebrations too. Only the phone that started sharing can update its lane, and a lane expires after 12 hours. |
 | Leaderboard | Top 3 for **Pin Count**, **Games Won** and **Games Bowled**, plus High Game, Best Average, and a stat sheet for every bowler. Filter by all time, this year or the last 30 days. Tied scores share a rank, and a game needs 2+ bowlers to award a win. |
 
 ## Architecture
@@ -27,6 +28,8 @@ src/game.js              Live session: turn order, undo, frame edits, autosave
 src/store.js             Storage adapters behind one interface
 src/components/fk-*.js   <fk-scoreboard> <fk-pinpad> <fk-setup> <fk-leaderboard> <fk-history> <fk-celebrate>
 netlify/functions/games.mts   GET/POST/DELETE /api/games on Netlify Blobs
+netlify/functions/live.mts    GET/PUT/DELETE /api/live/:code (watch a game in progress)
+src/live.js, src/live-ui.js   Live lane sharing (scorekeeper) and watching (everyone else)
 ```
 
 ### Where games are stored
@@ -40,6 +43,10 @@ netlify/functions/games.mts   GET/POST/DELETE /api/games on Netlify Blobs
 The two shared histories are **separate**: games saved in the artifact don't appear on the Netlify site, and the reverse. Pick one as the league's home.
 
 Each game is stored as frames (`number[][]`), not totals. Totals are recalculated on read, and the server checks every save with the same `parseGame()` validator the client uses.
+
+## Art direction
+
+70s bowling-alley colors (burnt orange, harvest gold, walnut) with mid-century matchbook-print treatments: original two-color SVG illustrations (`#art-*` symbols in `app.html`), paper grain, a halftone header, B·O·W·L diamonds, and a Yellowtail script for taglines.
 
 ## Develop
 
