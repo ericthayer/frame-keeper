@@ -1,0 +1,15 @@
+{
+  "name": "Frame Keeper",
+  "short_name": "Frame Keeper",
+  "description": "Retro bowling scorekeeper with shared match history and leaderboards.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#4a2412",
+  "background_color": "#4a2412",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

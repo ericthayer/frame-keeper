@@ -16,6 +16,7 @@ import { keepAwake as requestWake } from "./wake.js";
 import "./components/fk-scan.js";
 import "./components/fk-sendoff.js";
 import { normalizeCode } from "./live.js";
+import "./offline.js";
 
 /** @typedef {import("./stats.js").SavedGame} SavedGame */
 /** @typedef {import("./store.js").GameStore} GameStore */
