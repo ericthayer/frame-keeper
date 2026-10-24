@@ -26,6 +26,29 @@ function isLiveGame(v) {
   return !!g && typeof g.id === "string" && Array.isArray(g.bowlers) && g.bowlers.length > 0 && typeof g.active === "number";
 }
 
+/**
+ * What the most recent ball in a bowler's game deserves: shared by the scorekeeper and live watchers.
+ * @param {number[][]} frames
+ * @returns {Moment | null}
+ */
+export function lastBallMoment(frames) {
+  let f = frames.length - 1;
+  while (f >= 0 && !(frames[f]?.length)) f--;
+  if (f < 0) return null;
+  const balls = frames[f];
+  const marks = frames.flatMap((b, i) => frameMarks(b ?? [], i));
+  const last = marks[marks.length - 1];
+  if (last === "X") {
+    if (isGameComplete(frames) && currentScore(frames) === 300) return "perfect";
+    let run = 0;
+    for (let i = marks.length - 1; i >= 0 && marks[i] === "X"; i--) run++;
+    return run % 3 === 0 ? "turkey" : "strike";
+  }
+  if (last === "/") return "spare";
+  if (balls[balls.length - 1] === 0 && isFreshRack(balls.slice(0, -1), f)) return "gutter";
+  return null;
+}
+
 export class GameSession extends EventTarget {
   /** @type {LiveGame | null} */
   game = null;
@@ -115,9 +138,8 @@ export class GameSession extends EventTarget {
     const bowler = g.bowlers[g.active];
     const f = currentFrameIndex(bowler.frames);
     const balls = (bowler.frames[f] ??= []);
-    const freshRack = isFreshRack(balls, f);
     balls.push(pins);
-    const moment = this.#momentFor(bowler, f, freshRack, pins);
+    const moment = lastBallMoment(bowler.frames);
     if (isFrameComplete(balls, f)) this.#advance();
     this.#commit();
     return this.complete ? "final" : moment;
@@ -192,27 +214,6 @@ export class GameSession extends EventTarget {
         return;
       }
     }
-  }
-
-  /**
-   * @param {LiveBowler} bowler
-   * @param {number} frame
-   * @param {boolean} freshRack
-   * @param {number} pins
-   * @returns {Moment | null}
-   */
-  #momentFor(bowler, frame, freshRack, pins) {
-    const marks = bowler.frames.flatMap((balls, i) => frameMarks(balls, i));
-    const last = marks[marks.length - 1];
-    if (last === "X") {
-      if (isGameComplete(bowler.frames) && currentScore(bowler.frames) === 300) return "perfect";
-      let run = 0;
-      for (let i = marks.length - 1; i >= 0 && marks[i] === "X"; i--) run++;
-      return run > 0 && run % 3 === 0 ? "turkey" : "strike";
-    }
-    if (last === "/") return "spare";
-    if (pins === 0 && freshRack) return "gutter";
-    return null;
   }
 
   #snapshot() {

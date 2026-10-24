@@ -4,12 +4,63 @@
 <meta name="description" content="Retro bowling scorekeeper with shared match history and leaderboards.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Righteous&family=Shrikhand&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Righteous&family=Shrikhand&family=Yellowtail&display=swap">
 <link rel="stylesheet" href="src/styles.css">
 <!-- head:end -->
 <div class="app">
+  <!-- Two-color matchbook-print art: walnut ink, gold and orange spot colors. -->
+  <svg class="sprite" aria-hidden="true" focusable="false">
+    <defs>
+      <filter id="art-rough" x="-10%" y="-10%" width="120%" height="120%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.09" numOctaves="2" seed="7"/>
+        <feDisplacementMap in="SourceGraphic" scale="14"/>
+      </filter>
+      <symbol id="art-pin" viewBox="0 0 40 100">
+        <path class="a-gold a-line" d="M20 3C27 3 30 10 29 17c-1 7-4 10-4 15 0 6 10 16 10 34 0 16-5 28-9 32H14c-4-4-9-16-9-32 0-18 10-28 10-34 0-5-3-8-4-15-1-7 2-14 9-14Z"/>
+        <path class="a-stripe" d="M15 31q5 3 10 0M15.4 37q4.6 3 9.2 0"/>
+        <path class="a-shine" d="M11 58q-2 16 3 30"/>
+      </symbol>
+      <symbol id="art-ball" viewBox="0 0 100 100">
+        <circle class="a-ink" cx="50" cy="50" r="46"/>
+        <circle class="a-hole" cx="41" cy="30" r="6.5"/>
+        <circle class="a-hole" cx="58" cy="27" r="6.5"/>
+        <circle class="a-hole" cx="51" cy="45" r="7.5"/>
+        <path class="a-shine a-shine--wide" d="M20 60a32 32 0 0 0 22 24"/>
+      </symbol>
+      <symbol id="art-strike" viewBox="0 0 320 200">
+        <ellipse class="a-paper" cx="198" cy="96" rx="104" ry="80" filter="url(#art-rough)"/>
+        <g class="a-dots"><circle cx="88" cy="40" r="3"/><circle cx="76" cy="62" r="2"/><circle cx="300" cy="150" r="3"/><circle cx="292" cy="40" r="2.5"/><circle cx="104" cy="22" r="2"/></g>
+        <path class="a-line a-burst" d="M150 30 136 14M196 16l2-14M262 26l14-14M292 84l20-4M128 66l-18-6"/>
+        <use href="#art-pin" x="150" y="24" width="40" height="100" transform="rotate(-32 170 74)"/>
+        <use href="#art-pin" x="236" y="22" width="40" height="100" transform="rotate(38 256 72)"/>
+        <use href="#art-pin" x="206" y="10" width="44" height="110" transform="rotate(12 228 65)"/>
+        <use href="#art-pin" x="182" y="40" width="44" height="110" transform="rotate(-8 204 95)"/>
+        <use href="#art-pin" x="236" y="100" width="36" height="90" transform="rotate(78 254 145)"/>
+        <path class="a-line a-speed" d="M14 132h44M6 150h46M22 168h40"/>
+        <use href="#art-ball" x="62" y="104" width="86" height="86"/>
+      </symbol>
+      <symbol id="art-trophy" viewBox="0 0 100 120">
+        <path class="a-line a-none" d="M26 20H11c0 20 9 27 17 28M74 20h15c0 20-9 27-17 28"/>
+        <path class="a-gold a-line" d="M25 10h50v30c0 18-12 28-25 28S25 58 25 40Z"/>
+        <path class="a-paper" d="m50 22 4.7 9.5 10.5 1.5-7.6 7.4 1.8 10.4L50 45.9l-9.4 4.9 1.8-10.4-7.6-7.4 10.5-1.5Z"/>
+        <path class="a-gold a-line" d="M44 68h12v16H44Z"/>
+        <path class="a-orange a-line" d="M28 84h44v16H28Z"/>
+        <path class="a-line a-burst" d="M14 6 6 0M86 6l8-6"/>
+      </symbol>
+      <symbol id="art-sheet" viewBox="0 0 150 110">
+        <g transform="rotate(-5 70 50)">
+          <rect class="a-paper a-line" x="12" y="14" width="116" height="76" rx="3"/>
+          <path class="a-line a-thin" d="M12 36h116M12 54h116M12 72h116M44 14v76M58 14v76M72 14v76M86 14v76M100 14v76M114 14v76"/>
+          <path class="a-line a-mark" d="M50 40l8 10m0-10-8 10M64 58l8 10M90 44l-6 8M92 62l8 10m0-10-8 10"/>
+          <path class="a-line a-thin" d="M18 26h20M18 46h18M18 64h14"/>
+        </g>
+        <path class="a-gold a-line" d="m96 100 38-40 8 8-38 40-12 4Z"/>
+        <path class="a-orange a-line" d="m134 60 6-6 8 8-6 6Z"/>
+      </symbol>
+    </defs>
+  </svg>
   <header class="marquee">
-    <div class="marquee__inner">
+    <div class="marquee__inner marquee__inner--halftone">
       <h1 class="marquee__title"><span class="marquee__frame">Frame</span> <span class="marquee__keeper">Keeper</span></h1>
       <p class="marquee__tag">Lanes open · Shoes required</p>
       <p class="sync" id="sync" data-kind="pending">Connecting…</p>
@@ -18,9 +69,28 @@
   </header>
 
   <main class="main">
-    <section class="view" id="lanes" aria-labelledby="lanes-title">
+    <section class="view" id="view-lanes" aria-labelledby="lanes-title">
       <h2 class="sr-only" id="lanes-title" tabindex="-1">Lanes</h2>
+      <figure class="matchbook" id="matchbook">
+        <div class="matchbook__band">
+          <span class="diamonds" aria-hidden="true"><span>B</span><span>O</span><span>W</span><span>L</span></span>
+          <span class="matchbook__lanes">Open lanes · Tonight</span>
+        </div>
+        <svg class="matchbook__art" viewBox="0 0 320 200" role="img" aria-label="A bowling ball scattering pins"><use href="#art-strike"/></svg>
+        <figcaption class="matchbook__cap">
+          <span class="script">with the whole gang!</span>
+          <span class="matchbook__small">10 frames · automatic scoring · bragging rights</span>
+        </figcaption>
+      </figure>
       <fk-setup id="setup"></fk-setup>
+      <form class="watch-form" id="watch-form" aria-describedby="watch-hint" novalidate hidden>
+        <label class="field__label" for="watch-code">Following someone else's lane?</label>
+        <div class="field__row field">
+          <input id="watch-code" type="text" inputmode="text" autocapitalize="characters" autocomplete="off" maxlength="4" placeholder="Lane code">
+          <button type="submit" class="btn btn--ghost">Watch</button>
+        </div>
+        <p class="setup__hint" id="watch-hint" aria-live="polite"></p>
+      </form>
 
       <div class="live" id="live" hidden>
         <p class="nowup" id="nowup" aria-live="polite">
@@ -28,6 +98,14 @@
           <strong class="nowup__name" id="nowup-name"></strong>
           <span class="nowup__detail" id="nowup-detail"></span>
         </p>
+        <div class="share" id="share" hidden>
+          <button type="button" class="btn btn--small btn--ghost" id="share-start">Share live</button>
+          <div class="share__panel" id="share-panel" hidden>
+            <p class="live-chip">LIVE · Lane <span id="share-code"></span></p>
+            <button type="button" class="btn btn--small" id="share-send">Send watch link</button>
+            <button type="button" class="btn btn--small btn--quiet" id="share-stop">Stop sharing</button>
+          </div>
+        </div>
         <div class="edit-banner" id="edit-banner" role="status" hidden>
           <span id="edit-text"></span>
           <button type="button" class="btn btn--small btn--ghost" id="edit-cancel">Cancel</button>
@@ -37,7 +115,8 @@
         <p class="live__tip">Tap a finished frame to fix it. Tap a name to change who's up.</p>
 
         <div class="final" id="final" hidden>
-          <p class="final__eyebrow">Final</p>
+          <svg class="final__art" viewBox="0 0 100 120" aria-hidden="true"><use href="#art-trophy"/></svg>
+          <p class="final__eyebrow script">Champion!</p>
           <p class="final__winner" id="final-winner"></p>
           <div class="final__actions">
             <button type="button" class="btn btn--big" id="save-btn">Save to history</button>
@@ -59,13 +138,18 @@
       </div>
     </section>
 
-    <section class="view" id="leaders" aria-labelledby="leaders-title" hidden>
+    <section class="view" id="view-watch" aria-labelledby="watch-title" hidden>
+      <h2 class="view__title" id="watch-title" tabindex="-1">Watching Live</h2>
+      <fk-watch id="watcher"></fk-watch>
+    </section>
+
+    <section class="view" id="view-leaders" aria-labelledby="leaders-title" hidden>
       <h2 class="view__title" id="leaders-title" tabindex="-1">Leaderboard</h2>
       <p class="view__sub">Bragging rights, settled by the numbers.</p>
       <fk-leaderboard id="leaderboard"></fk-leaderboard>
     </section>
 
-    <section class="view" id="history" aria-labelledby="history-title" hidden>
+    <section class="view" id="view-history" aria-labelledby="history-title" hidden>
       <h2 class="view__title" id="history-title" tabindex="-1">Match History</h2>
       <p class="view__sub">Every saved game, with the full score sheet.</p>
       <fk-history id="history-list"></fk-history>

@@ -10,6 +10,8 @@ import { GameSession } from "./game.js";
 import { connectStore } from "./store.js";
 import { aggregate, gameResults, shareText } from "./stats.js";
 import { currentScore } from "./scoring.js";
+import { initLive } from "./live-ui.js";
+import { normalizeCode } from "./live.js";
 
 /** @typedef {import("./stats.js").SavedGame} SavedGame */
 /** @typedef {import("./store.js").GameStore} GameStore */
@@ -25,6 +27,7 @@ const $ = (id) => /** @type {T} */ (document.getElementById(id));
 const ui = {
   setup: /** @type {import("./components/fk-setup.js").FkSetup} */ ($("setup")),
   live: $("live"),
+  matchbook: $("matchbook"),
   board: /** @type {import("./components/fk-scoreboard.js").FkScoreboard} */ ($("board")),
   pad: /** @type {import("./components/fk-pinpad.js").FkPinpad} */ ($("pad")),
   nowName: $("nowup-name"),
@@ -61,13 +64,19 @@ let savedId = null;
 
 /* ---------- Routing ---------- */
 const VIEWS = ["lanes", "leaders", "history"];
+/** @type {ReturnType<typeof initLive> | null} */
+let live = null;
 
-/** @param {string} name @param {boolean} [focus] */
+/** "#watch-KQZP" opens the live view for that lane. @param {string} name @param {boolean} [focus] */
 function show(name, focus = false) {
-  const view = VIEWS.includes(name) ? name : "lanes";
-  for (const el of ui.views) el.hidden = el.id !== view;
+  const watchCode = name.startsWith("watch-") ? normalizeCode(name.slice(6)) : null;
+  const view = watchCode ? "watch" : VIEWS.includes(name) ? name : "lanes";
+  const hash = watchCode ? `watch-${watchCode}` : view;
+  // Sections are "view-*" so the route hash never triggers an anchor jump.
+  for (const el of ui.views) el.hidden = el.id !== `view-${view}`;
   for (const tab of ui.tabs) tab.setAttribute("aria-current", tab.dataset.view === view ? "page" : "false");
-  if (location.hash.slice(1) !== view) history.replaceState(null, "", `#${view}`);
+  if (location.hash.slice(1) !== hash) history.replaceState(null, "", `#${hash}`);
+  live?.setWatching(watchCode);
   if (focus) $(`${view}-title`).focus({ preventScroll: true });
   window.scrollTo({ top: 0 });
 }
@@ -89,6 +98,7 @@ function toast(msg) {
 function renderGame() {
   const g = session.game;
   ui.setup.hidden = !!g;
+  ui.matchbook.hidden = !!g;
   ui.live.hidden = !g;
   if (!g) return;
 
@@ -264,6 +274,7 @@ async function keepAwake() {
 document.addEventListener("visibilitychange", () => document.visibilityState === "visible" && keepAwake());
 
 /* ---------- Boot ---------- */
+live = initLive({ session, toast, celebrate: (text, tone) => ui.celebrate.show(text, tone), show });
 show(location.hash.slice(1) || "lanes");
 renderGame();
 renderHistory();
@@ -273,6 +284,7 @@ connectStore().then((s) => {
   store = s;
   ui.sync.textContent = s.label;
   ui.sync.dataset.kind = s.kind;
+  live?.setAvailable(s.kind === "netlify");
   ui.sync.title = s.shared ? "Saved games are shared with everyone who opens this app." : "Games stay on this device.";
   renderGame();
   s.watch(

@@ -70,3 +70,16 @@ test("frame validation rejects impossible input", () => {
   assert.ok(isValidFrames([[10], [3, 7]]));
   assert.ok(isValidFrames("nope") === false);
 });
+
+test("lastBallMoment names the ball worth celebrating", async () => {
+  // game.js touches localStorage only inside GameSession, so importing it in Node is safe.
+  const { lastBallMoment } = await import("../src/game.js");
+  assert.equal(lastBallMoment([]), null);
+  assert.equal(lastBallMoment([[10]]), "strike");
+  assert.equal(lastBallMoment([[10], [10], [10]]), "turkey");
+  assert.equal(lastBallMoment([[3, 7]]), "spare");
+  assert.equal(lastBallMoment([[0]]), "gutter");
+  assert.equal(lastBallMoment([[4, 0]]), null);
+  assert.equal(lastBallMoment([[0, 10]]), "spare");
+  assert.equal(lastBallMoment(toFrames(Array(12).fill(10))), "perfect");
+});
