@@ -1,3 +1,4 @@
+@import "./celebrate.css";
 /* Layout: overhead score monitor up top, ball-return pin pad in thumb reach, lane-button tab bar at the bottom. */
 :root {
   --bg: #f1dfb8;          /* rental-shoe tan */
@@ -6,7 +7,7 @@
   --ink: #36190c;         /* walnut */
   --ink-soft: #6c4730;
   --line: #d8bd8c;
-  --orange: #c4471a;      /* burnt orange */
+  --orange: #b53e14;      /* burnt orange */
   --gold: #e7a336;        /* harvest gold */
   --avocado: #66701f;
   --walnut: #4a2412;
@@ -24,8 +25,9 @@
   --print-card: #f4e1b4;
   --print-ink: #36190c;
   --print-gold: #e7a336;
-  --print-orange: #c4471a;
+  --print-orange: #b53e14;
   --font-script: "Yellowtail", "Brush Script MT", cursive;
+  --font-block: "Bowlby One", "Impact", "Arial Black", sans-serif;
   --grain-opacity: .09;
   --grain-blend: multiply;
 
@@ -36,7 +38,7 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #1b100a; --surface: #2a180e; --surface-2: #331e12; --ink: #f6e4c0; --ink-soft: #c9a983;
+    --bg: #1b100a; --surface: #2a180e; --surface-2: #331e12; --ink: #f6e4c0; --ink-soft: #c9a983; --ink-soft-gold: var(--ink);
     --line: #4c3020; --orange: #f0773a; --gold: #f2b445; --avocado: #a7b34c; --walnut: #120a06;
     --on-accent: #1b100a; --up: #4a3112; --danger: #ff7a66; --shadow: 0 0 0;
     --grain-opacity: .06; --grain-blend: screen;
@@ -44,7 +46,7 @@
   }
 }
 :root[data-theme="dark"] {
-  --bg: #1b100a; --surface: #2a180e; --surface-2: #331e12; --ink: #f6e4c0; --ink-soft: #c9a983;
+  --bg: #1b100a; --surface: #2a180e; --surface-2: #331e12; --ink: #f6e4c0; --ink-soft: #c9a983; --ink-soft-gold: var(--ink);
   --line: #4c3020; --orange: #f0773a; --gold: #f2b445; --avocado: #a7b34c; --walnut: #120a06;
   --on-accent: #1b100a; --up: #4a3112; --danger: #ff7a66; --shadow: 0 0 0;
   --grain-opacity: .06; --grain-blend: screen;
@@ -64,6 +66,13 @@ button { font: inherit; color: inherit; cursor: pointer; }
 button:disabled { cursor: not-allowed; }
 :focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+/* Skip link: hidden like .sr-only until a keyboard lands on it, then a pill pinned at the top. */
+.skip-link {
+  position: fixed; top: max(10px, env(safe-area-inset-top, 0px)); left: var(--gutter-l); z-index: 60; padding: 10px 18px;
+  border-radius: 999px; background: var(--orange); color: var(--on-accent); box-shadow: 0 4px 0 var(--walnut);
+  font-family: var(--font-ui); letter-spacing: .03em; text-decoration: none;
+}
+.skip-link:not(:focus) { width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; box-shadow: none; }
 /* Aged-paper grain over everything, like a printed matchbook. */
 body::after {
   content: ""; position: fixed; inset: 0; z-index: 50; pointer-events: none; opacity: var(--grain-opacity); mix-blend-mode: var(--grain-blend);
@@ -90,7 +99,8 @@ body::after {
 .marquee__tag { grid-column: 1; margin: 0; font-family: var(--font-mono); font-size: .75rem; letter-spacing: .14em; text-transform: uppercase; color: #d8b98a; }
 .sync {
   grid-column: 2; grid-row: 1 / span 2; align-self: center; margin: 0; padding: 4px 10px; border-radius: 999px;
-  border: 1.5px solid #8a5a32; font-family: var(--font-mono); font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: #f7e2b5; white-space: nowrap;
+  border: 1.5px solid #8a5a32; font-family: var(--font-mono); font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: #f7e2b5;
+  text-align: center; overflow-wrap: anywhere;
 }
 .sync::before { content: "●"; margin-right: 6px; color: #c79a62; }
 .sync[data-kind="claude"]::before, .sync[data-kind="netlify"]::before { color: #b9cf4e; }
@@ -191,6 +201,7 @@ body::after {
 .field { display: grid; gap: 6px; }
 .field__label { font-family: var(--font-mono); font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); }
 .field__row { display: flex; gap: 8px; }
+.field__row input { width: 0; } /* size by flex, not the default 20-character width that overflows 320px */
 .field input {
   flex: 1; min-width: 0; min-height: 50px; padding: 0 14px; border: 2px solid var(--ink); border-radius: 12px;
   background: var(--bg); color: var(--ink); font: 1.1rem var(--font-ui);
@@ -227,8 +238,15 @@ body::after {
   padding: 4px 0; background: var(--walnut); color: #f4b746; font-family: var(--font-mono); font-size: .75rem; font-weight: 700; letter-spacing: .06em;
 }
 .board__name-h, .board__name { position: sticky; left: 0; z-index: 1; text-align: left; }
+/* Totals stay pinned to the right edge while the frames scroll. Collapsed borders don't travel with sticky cells, so the rule is a shadow. */
+.board__total-h, .board__total { position: sticky; right: 0; z-index: 1; width: 64px; text-align: center; box-shadow: inset 2px 0 0 var(--ink); }
+.board__total { background: var(--surface); border-top: 1px solid var(--line); padding: 4px; }
 .board__name-h { padding-left: 10px !important; }
-.board__name { background: var(--surface); border-right: 2px solid var(--ink); border-top: 1px solid var(--line); padding: 0; }
+/* scroll-margin: a row scrolled into view clears the pin pad, which rides 10px above the tab bar. */
+.board__name {
+  background: var(--surface); border-right: 2px solid var(--ink); border-top: 1px solid var(--line); padding: 0;
+  scroll-margin: 8px 0 calc(var(--pad-h, 0px) + var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + 18px);
+}
 .board__who {
   display: flex; align-items: center; gap: 6px; width: 100%; min-width: 92px; min-height: 58px; max-width: 120px; padding: 4px 8px;
   border: 0; background: transparent; text-align: left; font-size: .95rem; line-height: 1.1; overflow-wrap: break-word;
@@ -250,12 +268,19 @@ body::after {
 .mark.is-x { background: var(--walnut); color: #f4b746; border-color: var(--walnut); }
 .mark.is-spare { color: var(--orange); font-size: 1rem; }
 .running { display: block; padding: 4px 0 6px; text-align: center; font-size: 1.05rem; min-height: 1.6em; }
-.board__total-h, .board__total { width: 64px; text-align: center; border-left: 2px solid var(--ink); }
-.board__total { border-top: 1px solid var(--line); padding: 4px; }
 .board__score { display: block; font-family: var(--font-display); font-size: 1.5rem; line-height: 1.1; color: var(--orange); }
 .board__max { display: block; font-family: var(--font-mono); font-size: .68rem; color: var(--ink-soft); white-space: nowrap; }
 .is-winner .board__score { color: var(--avocado); }
 .crown { color: var(--gold); margin-right: 4px; }
+/* Compact rows (5+ bowlers, not up): still tappable, still showing name, marks and totals. */
+.is-compact .board__who, .is-compact .frame__btn { min-height: 0; }
+.is-compact .board__who { white-space: nowrap; overflow: hidden; }
+.is-compact .marks { height: 18px; }
+.is-compact .mark { height: 17px; font-size: .75rem; }
+.is-compact .running { padding: 0 0 2px; font-size: .9rem; line-height: 1.1; min-height: 1.1em; }
+.is-compact .board__total { padding: 2px 4px; }
+.is-compact .board__score { font-size: 1.15rem; }
+.is-compact .board__max { display: none; }
 
 /* ---------- Pin pad ---------- */
 .pad { display: grid; gap: 12px; padding: 14px; border-radius: 20px; background: var(--walnut); box-shadow: inset 0 -6px 0 rgb(0 0 0 / .25); }
@@ -293,7 +318,7 @@ body::after {
 .key:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 #a7703d; }
 .key:disabled { opacity: .22; box-shadow: none; }
 .key--strike { background: #e7a336; box-shadow: 0 5px 0 #8f5a12; font-family: var(--font-display); }
-.key--spare { background: #c4471a; color: #fff6e3; box-shadow: 0 5px 0 #6e220a; font-family: var(--font-display); }
+.key--spare { background: #b53e14; color: #fff6e3; box-shadow: 0 5px 0 #6e220a; font-family: var(--font-display); }
 .key--gutter { background: #b9a07c; }
 
 /* ---------- Live lanes ---------- */
@@ -393,6 +418,7 @@ select.scan__name { appearance: auto; }
 .podium__name { min-width: 0; font-size: 1.1rem; overflow-wrap: anywhere; }
 .podium__value { font-variant-numeric: tabular-nums; font-size: 1.2rem; }
 .podium__value small { font-family: var(--font-mono); font-size: .72rem; color: var(--ink-soft); }
+.rank-1 .podium__value small { color: var(--ink-soft-gold, var(--ink-soft)); }
 .podium__none { margin: 0; color: var(--ink-soft); }
 .podiums--bonus { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
 .podium--mini .podium__title { font-size: 1.1rem; }
@@ -439,29 +465,6 @@ select.scan__name { appearance: auto; }
 .tabbar__btn[aria-current="page"] { color: #f4b746; }
 .tabbar__btn[aria-current="page"] span { border-bottom: 2px solid #f4b746; }
 
-/* ---------- Celebration marquee ---------- */
-.celebrate { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; pointer-events: none; visibility: hidden; }
-.celebrate.is-on { visibility: visible; }
-.celebrate__sign {
-  max-width: calc(100% - 32px); padding: 18px 28px; border-radius: 22px; background: #36190c; color: #f4b746;
-  font-family: var(--font-display); font-size: clamp(2.4rem, 14vw, 5rem); line-height: 1; text-align: center;
-  text-shadow: 3px 3px 0 #c4471a; overflow-wrap: anywhere;
-  border: 6px dotted #f7e2b5; box-shadow: 0 0 0 6px #36190c, 0 18px 40px rgb(0 0 0 / .45);
-}
-.celebrate__sign { display: grid; justify-items: center; gap: 4px; }
-.celebrate__art { width: min(240px, 62vw); height: auto; aspect-ratio: 16 / 10; }
-.celebrate[data-tone="spare"] .celebrate__art, .celebrate[data-tone="gutter"] .celebrate__art { display: none; }
-.celebrate[data-tone="spare"] .celebrate__sign { color: #fbe9c4; text-shadow: 3px 3px 0 #66701f; }
-.celebrate[data-tone="gutter"] .celebrate__sign { font-size: clamp(1.6rem, 8vw, 2.6rem); color: #d8b98a; text-shadow: none; }
-.celebrate.is-on .celebrate__sign { animation: sign-in 1.3s cubic-bezier(.2, 1.4, .4, 1) both, bulbs .25s steps(2) infinite; }
-.celebrate[data-tone="big"].is-on .celebrate__sign { animation: sign-in 2.2s cubic-bezier(.2, 1.4, .4, 1) both, bulbs .2s steps(2) infinite; }
-@keyframes sign-in {
-  0% { opacity: 0; transform: scale(.4) rotate(-8deg); }
-  18% { opacity: 1; transform: scale(1.06) rotate(-3deg); }
-  30%, 82% { opacity: 1; transform: scale(1) rotate(-3deg); }
-  100% { opacity: 0; transform: scale(.96) rotate(-3deg) translateY(-20px); }
-}
-@keyframes bulbs { 50% { border-color: #e7a336; } }
 
 /* ---------- Toast ---------- */
 .toast {
@@ -485,9 +488,22 @@ select.scan__name { appearance: auto; }
   }
 }
 
+/* ---------- Short landscape ---------- */
+/* The pad moves beside the sheet and sticks to the top, so the active row and every key share the screen.
+   A height query needs a size container, which .app can't be, so this one stays a media query. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .live { grid-template-columns: minmax(0, 1fr) minmax(240px, 300px); align-items: start; }
+  .live > * { grid-column: 1; }
+  /* Span the five rows always shown in a game (now up, tools, sheet, tip, footer) so no empty row adds a gap. */
+  .live .pad { grid-column: 2; grid-row: 1 / span 5; top: 8px; bottom: auto; }
+  .live .key { min-height: 44px; } /* fits the whole pad, Undo included, between the top and the tab bar */
+  /* The pad no longer covers the bottom of the sheet, so a row scrolled into view only clears the tab bar. */
+  .board__name { scroll-margin-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + 8px); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: .01ms !important; scroll-behavior: auto !important; }
-  .celebrate.is-on .celebrate__sign, .celebrate[data-tone="big"].is-on .celebrate__sign { animation: fade 1.6s ease both; }
+  .celebrate.is-on .celebrate__sign, .celebrate.is-on .celebrate__book, .celebrate[data-tone="big"].is-on .celebrate__book { animation: fade 1.6s ease both; }
   .live-chip::before { animation: none; }
   @keyframes fade { 0%, 100% { opacity: 0; } 15%, 85% { opacity: 1; } }
 }

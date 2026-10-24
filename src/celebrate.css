@@ -1,0 +1,75 @@
+/* ---------- Celebration: matchbook cover for strikes, spares, turkeys and wins; plain sign for gutters ---------- */
+.celebrate { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; pointer-events: none; visibility: hidden; }
+.celebrate.is-on { visibility: visible; }
+.celebrate > * { grid-area: 1 / 1; }
+.celebrate:not([data-tone="gutter"]) .celebrate__sign, .celebrate[data-tone="gutter"] .celebrate__book { display: none; }
+
+/* Gutter ball: the marquee sign, kept quiet. */
+.celebrate__sign {
+  max-width: calc(100% - 32px); padding: 18px 28px; border-radius: 22px; background: #36190c; color: #d8b98a;
+  font-family: var(--font-display); font-size: clamp(1.6rem, 8vw, 2.6rem); line-height: 1; text-align: center; overflow-wrap: anywhere;
+  border: 6px dotted #f7e2b5; box-shadow: 0 0 0 6px #36190c, 0 18px 40px rgb(0 0 0 / .45);
+}
+
+/* The matchbook: printed cover over a striker strip. Strike is the red cover, spare the cream one. */
+.celebrate__book {
+  --cover: var(--print-orange); --floor: #f0c596; --dot: var(--print-orange);
+  --banner: var(--print-ink); --word: var(--print-gold); --word-shadow: var(--print-orange); --tag: var(--print-paper);
+  container-type: inline-size;
+  display: grid; grid-template-rows: 1fr auto;
+  width: min(300px, 78vw); aspect-ratio: 5 / 6; border-radius: 6px; overflow: hidden;
+  background: var(--cover); box-shadow: 0 0 0 1.5px rgb(54 25 12 / .4), 0 22px 44px rgb(0 0 0 / .5);
+}
+.celebrate[data-tone="spare"] .celebrate__book {
+  --cover: var(--print-paper); --floor: #ecd3a9;
+  --banner: var(--print-orange); --word: var(--print-paper); --word-shadow: var(--print-ink); --tag: var(--print-orange);
+}
+.celebrate__cover { position: relative; }
+/* Worn edges: the cover darkens toward its rim like old card stock. */
+.celebrate__cover::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 28px rgb(54 25 12 / .3); }
+
+/* Dry-brush banner bleeding off the left edge, block caps on top. */
+.celebrate__banner { position: absolute; z-index: 1; left: -4%; top: 6%; width: 94%; padding: 6% 8% 7%; display: grid; place-items: center; rotate: -5deg; }
+.celebrate__brush { position: absolute; inset: 0; width: 100%; height: 100%; }
+.a-brush { fill: var(--banner); }
+.celebrate__word {
+  position: relative; font-family: var(--font-block); font-size: 17cqi; line-height: .95; letter-spacing: .03em;
+  text-transform: uppercase; text-align: center; text-wrap: balance; color: var(--word); text-shadow: .045em .05em 0 var(--word-shadow);
+}
+.celebrate[data-long] .celebrate__word { font-size: 10cqi; }
+
+/* Script slogan, the "for your Health!" line. */
+.celebrate__tagline {
+  position: absolute; z-index: 1; left: 9%; top: 37%; max-width: 62%;
+  font-family: var(--font-script); font-size: 11cqi; line-height: 1; color: var(--tag); rotate: -7deg;
+}
+
+/* Lane scene on a halftone floor, anchored to the bottom of the cover. */
+.celebrate__scene { position: absolute; left: 0; bottom: 0; width: 100%; height: auto; aspect-ratio: 240 / 150; }
+.celebrate__scene--spare, .celebrate[data-tone="spare"] .celebrate__scene--strike { display: none; }
+.celebrate[data-tone="spare"] .celebrate__scene--spare { display: block; }
+.a-floor { fill: var(--floor); }
+.a-dot { fill: var(--dot); }
+.a-shadow { opacity: .5; }
+
+/* Striker strip and staple along the bottom flap. */
+.celebrate__striker {
+  position: relative; height: 13cqi; border-top: 2px solid rgb(54 25 12 / .55);
+  background:
+    radial-gradient(circle, rgb(255 236 200 / .22) 0 .8px, transparent 1.3px) 0 0 / 4px 3px,
+    radial-gradient(circle, rgb(0 0 0 / .4) 0 .9px, transparent 1.4px) 2px 1px / 5px 4px,
+    #5a3420;
+}
+.celebrate__staple {
+  position: absolute; left: 50%; top: -4cqi; width: 16cqi; height: 3.2cqi; translate: -50% 0; border-radius: 1.5px;
+  background: linear-gradient(#f1eee8, #9c978f); box-shadow: 0 1px 0 rgb(0 0 0 / .45);
+}
+
+.celebrate.is-on .celebrate__sign, .celebrate.is-on .celebrate__book { animation: sign-in 1.3s cubic-bezier(.2, 1.4, .4, 1) both; }
+.celebrate[data-tone="big"].is-on .celebrate__book { animation-duration: 2.2s; }
+@keyframes sign-in {
+  0% { opacity: 0; transform: scale(.4) rotate(-8deg); }
+  18% { opacity: 1; transform: scale(1.06) rotate(-3deg); }
+  30%, 82% { opacity: 1; transform: scale(1) rotate(-3deg); }
+  100% { opacity: 0; transform: scale(.96) rotate(-3deg) translateY(-20px); }
+}
