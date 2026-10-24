@@ -167,6 +167,16 @@ body::after {
 .matchbook__cap { display: grid; justify-items: center; gap: 2px; padding: 0 14px 14px; text-align: center; }
 .matchbook__cap .script { font-size: clamp(1.9rem, 9cqi, 2.6rem); line-height: 1; color: var(--print-orange); text-shadow: 2px 2px 0 var(--print-paper), 3px 3px 0 var(--print-ink); transform: rotate(-4deg); }
 .matchbook__small { font-family: var(--font-mono); font-size: .74rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+/* Splash: the matchbook cover is the front door; Start opens the bowler form. */
+.splash { display: grid; gap: 16px; }
+.splash .matchbook { min-height: calc(100dvh - 330px); align-content: space-between; }
+.splash .matchbook__art { max-width: 520px; }
+.btn--start {
+  justify-self: center; width: calc(100% - 28px); max-width: 360px; margin: 2px 14px 18px; min-height: 64px;
+  background: var(--print-ink); color: var(--print-gold); font-family: var(--font-display); font-size: 1.9rem; letter-spacing: .02em;
+  box-shadow: 0 5px 0 var(--print-orange); border: 3px dotted var(--print-paper); outline-offset: 4px;
+}
+.btn--start:active:not(:disabled) { box-shadow: 0 2px 0 var(--print-orange); }
 .print-badge {
   display: grid; place-items: center; width: 112px; height: 112px; margin: 0 auto 10px; border-radius: 50%;
   background: var(--print-card); border: 2px solid var(--print-ink); box-shadow: 4px 4px 0 var(--print-gold);
