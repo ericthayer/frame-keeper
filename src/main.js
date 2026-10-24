@@ -33,6 +33,7 @@ const ui = {
   live: $("live"),
   splash: $("splash"),
   scan: /** @type {import("./components/fk-scan.js").FkScan} */ ($("scan")),
+  scanLive: /** @type {import("./components/fk-scan.js").FkScan} */ ($("scan-live")),
   sendoff: /** @type {import("./components/fk-sendoff.js").FkSendoff} */ ($("sendoff")),
   splashStart: /** @type {HTMLButtonElement} */ ($("splash-start")),
   board: /** @type {import("./components/fk-scoreboard.js").FkScoreboard} */ ($("board")),
@@ -117,6 +118,7 @@ function renderGame() {
 
   const complete = session.complete;
   const t = session.target;
+  ui.scanLive.bowlers = g.bowlers.map((b) => b.name);
   ui.board.bowlers = g.bowlers;
   ui.board.active = complete ? -1 : g.active;
   ui.board.edit = session.edit ? { bowler: session.edit.bowler, frame: session.edit.frame } : null;
@@ -238,6 +240,13 @@ ui.scan.addEventListener("fk-scan-load", (e) => {
   toast(session.complete ? "Scores loaded. Check them, then save." : "Scores loaded. Finish the missing frames on the pad.");
 });
 ui.sendoff.addEventListener("fk-photos-changed", () => store?.refresh());
+ui.scanLive.addEventListener("fk-scan-update", (e) => {
+  const { updates } = /** @type {CustomEvent<{ updates: Array<{ bowler: number, frames: number[][] }> }>} */ (e).detail;
+  const { updated, kept } = session.applyScan(updates);
+  showSheet();
+  const parts = [updated.length ? `Updated ${updated.join(", ")}` : "Nothing new on the screen", kept.length ? `kept the app's scores for ${kept.join(", ")}` : ""];
+  toast(`${parts.filter(Boolean).join("; ")}. Undo reverses it.`);
+});
 
 ui.quitBtn.addEventListener("click", () => {
   ui.quitConfirm.hidden = false;
@@ -318,6 +327,7 @@ connectStore().then((s) => {
   ui.sync.dataset.kind = s.kind;
   live?.setAvailable(s.kind === "netlify");
   ui.scan.hidden = s.kind !== "netlify";
+  ui.scanLive.hidden = s.kind !== "netlify";
   ui.sync.title = s.shared ? "Saved games are shared with everyone who opens this app." : "Games stay on this device.";
   renderGame();
   s.watch(

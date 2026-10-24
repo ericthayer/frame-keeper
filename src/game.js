@@ -100,6 +100,46 @@ export class GameSession extends EventTarget {
     this.#commit();
   }
 
+  /**
+   * Update the game in progress from a photo of the alley display. A bowler's frames are replaced
+   * only when the photo shows at least as many balls as the app has, so a stale photo can't erase scores.
+   * One undo step reverses the whole update.
+   * @param {Array<{ bowler: number, frames: number[][] }>} updates
+   * @returns {{ updated: string[], kept: string[] }}
+   */
+  applyScan(updates) {
+    const g = this.game;
+    if (!g) return { updated: [], kept: [] };
+    this.edit = null;
+    this.#snapshot();
+    /** @type {string[]} */
+    const updated = [];
+    /** @type {string[]} */
+    const kept = [];
+    for (const { bowler, frames } of updates) {
+      const b = g.bowlers[bowler];
+      if (!b) continue;
+      if (frames.flat().length >= b.frames.flat().length) {
+        b.frames = frames.map((f) => [...f]);
+        updated.push(b.name);
+      } else kept.push(b.name);
+    }
+    g.active = this.#nextUp();
+    this.#commit();
+    return { updated, kept };
+  }
+
+  /** Who bowls next after a bulk update: a frame in progress first, else the earliest frame in turn order. */
+  #nextUp() {
+    const g = /** @type {LiveGame} */ (this.game);
+    const open = g.bowlers.map((b, i) => ({ i, f: currentFrameIndex(b.frames), balls: (b.frames[currentFrameIndex(b.frames)] ?? []).length })).filter((x) => x.f < 10);
+    if (!open.length) return g.active;
+    const mid = open.find((x) => x.balls > 0);
+    if (mid) return mid.i;
+    const low = Math.min(...open.map((x) => x.f));
+    return /** @type {{ i: number }} */ (open.find((x) => x.f === low)).i;
+  }
+
   /** @returns {void} */
   clear() {
     this.game = null;

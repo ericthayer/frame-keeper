@@ -101,3 +101,26 @@ test("typeMarks enters frames typed on the phone keyboard", async () => {
   assert.equal(s.typeMarks("2").error, "");          // 8 then 2 is a spare by digits
   assert.deepEqual(s.game.bowlers[1].frames, [[7, 3], [8, 2]]);
 });
+
+test("applyScan merges a mid-game photo without losing newer scores", async () => {
+  const { GameSession } = await import("../src/game.js");
+  const { matchBowler } = await import("../src/stats.js");
+  assert.equal(matchBowler("ERI", ["Dana", "Eric"]), 1);
+  assert.equal(matchBowler("dana", ["Dana", "Eric"]), 0);
+  assert.equal(matchBowler("ZED", ["Dana", "Eric"]), -1);
+  assert.equal(matchBowler("ERIC", ["Eric", "Erica"], new Set([0])), 1);
+
+  const s = new GameSession();
+  s.start("", ["Eric", "Dana", "Sam"]);
+  s.typeMarks("X 72 9-"); // Eric F1, Dana F1, Sam F1
+  const r = s.applyScan([
+    { bowler: 0, frames: [[10], [7, 3]] },          // ahead: replace
+    { bowler: 1, frames: [[7, 2], [8]] },           // ahead, frame in progress
+    { bowler: 2, frames: [] },                      // behind the app: keep
+  ]);
+  assert.deepEqual(r, { updated: ["Eric", "Dana"], kept: ["Sam"] });
+  assert.deepEqual(s.game.bowlers[2].frames, [[9, 0]]);
+  assert.equal(s.game.active, 1); // Dana has a frame in progress
+  s.undo();
+  assert.deepEqual(s.game.bowlers[0].frames, [[10]]);
+});

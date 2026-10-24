@@ -335,6 +335,13 @@ body::after {
 .scan__notes { margin: 0; font-size: .9rem; color: var(--ink-soft); }
 .scan__error { margin: 0; color: var(--danger); }
 .scan__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.live__tools { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px; }
+.live__tools > .scan:has(.scan__review, .scan__reading, .scan__error) { flex-basis: 100%; }
+/* While a mid-game photo is being read or reviewed, the pad steps aside so Update is in reach. */
+.live:has(#scan-live .scan__review, #scan-live .scan__reading) .pad { display: none; }
+.scan__row--map { grid-template-columns: 1fr auto; }
+.scan__label { grid-column: 1 / -1; font-family: var(--font-mono); font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
+select.scan__name { appearance: auto; }
 .chip-status { grid-column: 1 / -1; justify-self: start; padding: 3px 10px; border-radius: 999px; font-size: .82rem; }
 .chip-status.is-ok { background: color-mix(in srgb, var(--avocado) 22%, transparent); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--avocado); }
 .chip-status.is-warn { background: color-mix(in srgb, var(--gold) 28%, transparent); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--gold); }
