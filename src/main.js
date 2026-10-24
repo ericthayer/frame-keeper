@@ -10,8 +10,8 @@ import { GameSession } from "./game.js";
 import { connectStore } from "./store.js";
 import { aggregate } from "./stats.js";
 import { shareResult } from "./share.js";
-import { currentScore } from "./scoring.js";
 import { initLive } from "./live-ui.js";
+import { initFinalCard, winnerLine } from "./final-card.js";
 import { keepAwake as requestWake } from "./wake.js";
 import "./components/fk-scan.js";
 import "./components/fk-sendoff.js";
@@ -44,15 +44,6 @@ const ui = {
   editBanner: $("edit-banner"),
   editText: $("edit-text"),
   editCancel: /** @type {HTMLButtonElement} */ ($("edit-cancel")),
-  final: $("final"),
-  finalWinner: $("final-winner"),
-  saveBtn: /** @type {HTMLButtonElement} */ ($("save-btn")),
-  rematchBtn: /** @type {HTMLButtonElement} */ ($("rematch-btn")),
-  saveStatus: $("save-status"),
-  quitBtn: /** @type {HTMLButtonElement} */ ($("quit-btn")),
-  quitConfirm: $("quit-confirm"),
-  quitYes: /** @type {HTMLButtonElement} */ ($("quit-yes")),
-  quitNo: /** @type {HTMLButtonElement} */ ($("quit-no")),
   leaders: /** @type {import("./components/fk-leaderboard.js").FkLeaderboard} */ ($("leaderboard")),
   history: /** @type {import("./components/fk-history.js").FkHistory} */ ($("history-list")),
   celebrate: /** @type {import("./components/fk-celebrate.js").FkCelebrate} */ ($("celebrate")),
@@ -67,10 +58,6 @@ const session = new GameSession();
 let store = null;
 /** @type {SavedGame[]} */
 let games = [];
-/** @type {string | null} Live game id already saved, so Save can't double-post. */
-let savedId = null;
-/** @type {SavedGame | null} The record just saved, until history reloads with it. */
-let savedRecord = null;
 /** Splash screen until someone taps Start; it returns when a game ends. */
 let started = false;
 
@@ -139,20 +126,10 @@ function renderGame() {
     ui.nowDetail.textContent = `Frame ${t.frame + 1} · Ball ${t.ball + 1}${t.ball > 0 && t.standing < 10 ? ` · ${t.standing} standing` : ""}`;
   }
 
-  ui.final.hidden = !complete;
-  if (complete) {
-    const scores = g.bowlers.map((b) => ({ name: b.name, total: currentScore(b.frames) }));
-    const top = Math.max(...scores.map((s) => s.total));
-    const winners = scores.filter((s) => s.total === top).map((s) => s.name);
-    ui.finalWinner.textContent =
-      scores.length === 1 ? `${winners[0]} rolled a ${top}` : winners.length > 1 ? `${winners.join(" & ")} tie at ${top}` : `${winners[0]} wins with ${top}`;
-    const saved = savedId === g.id;
-    ui.saveBtn.disabled = saved || !store;
-    ui.saveBtn.textContent = saved ? "Saved ✓" : "Save to history";
-  }
+  final.render();
   // Photos and send-off need the shared Netlify history and a saved game.
-  const savedGame = complete && savedId === g.id && store?.kind === "netlify" ? games.find((x) => x.id === g.id) ?? savedRecord : null;
-  ui.sendoff.game = savedGame;
+  const saved = complete && store?.kind === "netlify" ? final.saved() : null;
+  ui.sendoff.game = saved && (games.find((x) => x.id === saved.id) ?? saved);
 }
 session.addEventListener("change", renderGame);
 
@@ -171,7 +148,7 @@ function celebrateMoment(moment, who) {
   else if (moment === "perfect") ui.celebrate.show("PERFECT 300!", "big");
   else if (moment === "spare") ui.celebrate.show("SPARE!", "spare");
   else if (moment === "gutter") ui.celebrate.show(who ? `Gutter, ${who}` : "Gutter ball", "gutter");
-  else if (moment === "final") ui.celebrate.show(ui.finalWinner.textContent ?? "Final!", "big");
+  else if (moment === "final") ui.celebrate.show(session.game ? winnerLine(session.game.bowlers) : "Final!", "big");
 }
 ui.pad.addEventListener("fk-undo", () => session.undo());
 ui.pad.addEventListener("fk-type", (e) => {
@@ -189,7 +166,6 @@ ui.editCancel.addEventListener("click", () => session.cancelEdit());
 ui.setup.addEventListener("fk-start", (e) => {
   const { venue, names } = /** @type {CustomEvent<{ venue: string, names: string[] }>} */ (e).detail;
   session.start(venue, names);
-  savedId = null;
   keepAwake();
   showSheet();
 });
@@ -202,39 +178,24 @@ function showSheet() {
 /** @param {string[]} names @param {string} [venue] */
 function rematch(names, venue = "") {
   session.start(venue, names);
-  savedId = null;
   show("lanes");
   showSheet();
   toast("New game, same crew. Good luck!");
 }
-ui.rematchBtn.addEventListener("click", () => {
-  const g = session.game;
-  if (g) rematch(g.bowlers.map((b) => b.name), g.venue);
-});
-
-ui.saveBtn.addEventListener("click", async () => {
-  const g = session.game;
-  if (!g || !store || !session.complete) return;
-  ui.saveBtn.disabled = true;
-  ui.saveStatus.textContent = "Saving…";
-  /** @type {SavedGame} */
-  const record = { id: g.id, playedAt: new Date().toISOString(), venue: g.venue, bowlers: g.bowlers.map((b) => ({ name: b.name, frames: b.frames })) };
-  try {
-    await store.save(record);
-    savedId = g.id;
-    savedRecord = record;
-    ui.saveStatus.textContent = store.shared ? "In the books. Everyone can see it in History." : "Saved on this phone.";
-    renderGame();
-  } catch (err) {
-    ui.saveBtn.disabled = false;
-    ui.saveStatus.textContent = `Didn't save: ${err instanceof Error ? err.message : "unknown error"}. Tap Save to try again.`;
-  }
+const final = initFinalCard({
+  session,
+  store: () => store,
+  rematch,
+  end: () => {
+    started = false;
+    session.clear();
+  },
+  toast,
 });
 
 ui.scan.addEventListener("fk-scan-load", (e) => {
   const { bowlers } = /** @type {CustomEvent<{ bowlers: Array<{ name: string, frames: number[][] }> }>} */ (e).detail;
   session.load("", bowlers);
-  savedId = null;
   started = true;
   window.scrollTo({ top: 0 });
   toast(session.complete ? "Scores loaded. Check them, then save." : "Scores loaded. Finish the missing frames on the pad.");
@@ -248,30 +209,11 @@ ui.scanLive.addEventListener("fk-scan-update", (e) => {
   toast(`${parts.filter(Boolean).join("; ")}. Undo reverses it.`);
 });
 
-ui.quitBtn.addEventListener("click", () => {
-  ui.quitConfirm.hidden = false;
-  ui.quitBtn.hidden = true;
-  ui.quitNo.focus();
-});
-ui.quitNo.addEventListener("click", () => {
-  ui.quitConfirm.hidden = true;
-  ui.quitBtn.hidden = false;
-});
 ui.splashStart.addEventListener("click", () => {
   started = true;
   renderGame();
   /** @type {HTMLInputElement | null} */ (document.getElementById("fk-bowler-name"))?.focus();
   window.scrollTo({ top: 0 });
-});
-
-ui.quitYes.addEventListener("click", () => {
-  const wasSaved = savedId === session.game?.id;
-  started = false;
-  session.clear();
-  ui.quitConfirm.hidden = true;
-  ui.quitBtn.hidden = false;
-  ui.saveStatus.textContent = "";
-  toast(wasSaved ? "Ready for the next game." : "Game cleared.");
 });
 
 /* ---------- History & leaders ---------- */
@@ -302,7 +244,7 @@ ui.history.addEventListener("fk-delete", async (e) => {
 });
 ui.history.addEventListener("fk-rematch", (e) => {
   const { names } = /** @type {CustomEvent<{ names: string[] }>} */ (e).detail;
-  if (session.game && savedId !== session.game.id) {
+  if (session.game && !final.saved()) {
     show("lanes");
     toast("Save or end the current game first.");
     return;
