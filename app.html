@@ -71,6 +71,7 @@
   <main class="main">
     <section class="view" id="view-lanes" aria-labelledby="lanes-title">
       <h2 class="sr-only" id="lanes-title" tabindex="-1">Lanes</h2>
+      <div class="splash" id="splash">
       <figure class="matchbook" id="matchbook">
         <div class="matchbook__band">
           <span class="diamonds" aria-hidden="true"><span>B</span><span>O</span><span>W</span><span>L</span></span>
@@ -81,8 +82,8 @@
           <span class="script">with the whole gang!</span>
           <span class="matchbook__small">10 frames · automatic scoring · bragging rights</span>
         </figcaption>
+        <button type="button" class="btn btn--big btn--start" id="splash-start">Start</button>
       </figure>
-      <fk-setup id="setup"></fk-setup>
       <form class="watch-form" id="watch-form" aria-describedby="watch-hint" novalidate hidden>
         <label class="field__label" for="watch-code">Following someone else's lane?</label>
         <div class="field__row field">
@@ -91,6 +92,8 @@
         </div>
         <p class="setup__hint" id="watch-hint" aria-live="polite"></p>
       </form>
+      </div>
+      <fk-setup id="setup" hidden></fk-setup>
 
       <div class="live" id="live" hidden>
         <p class="nowup" id="nowup" aria-live="polite">

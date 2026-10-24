@@ -27,7 +27,8 @@ const $ = (id) => /** @type {T} */ (document.getElementById(id));
 const ui = {
   setup: /** @type {import("./components/fk-setup.js").FkSetup} */ ($("setup")),
   live: $("live"),
-  matchbook: $("matchbook"),
+  splash: $("splash"),
+  splashStart: /** @type {HTMLButtonElement} */ ($("splash-start")),
   board: /** @type {import("./components/fk-scoreboard.js").FkScoreboard} */ ($("board")),
   pad: /** @type {import("./components/fk-pinpad.js").FkPinpad} */ ($("pad")),
   nowName: $("nowup-name"),
@@ -61,6 +62,8 @@ let store = null;
 let games = [];
 /** @type {string | null} Live game id already saved, so Save can't double-post. */
 let savedId = null;
+/** Splash screen until someone taps Start; it returns when a game ends. */
+let started = false;
 
 /* ---------- Routing ---------- */
 const VIEWS = ["lanes", "leaders", "history"];
@@ -97,8 +100,8 @@ function toast(msg) {
 /* ---------- Live game rendering ---------- */
 function renderGame() {
   const g = session.game;
-  ui.setup.hidden = !!g;
-  ui.matchbook.hidden = !!g;
+  ui.splash.hidden = !!g || started;
+  ui.setup.hidden = !!g || !started;
   ui.live.hidden = !g;
   if (!g) return;
 
@@ -201,8 +204,16 @@ ui.quitNo.addEventListener("click", () => {
   ui.quitConfirm.hidden = true;
   ui.quitBtn.hidden = false;
 });
+ui.splashStart.addEventListener("click", () => {
+  started = true;
+  renderGame();
+  /** @type {HTMLInputElement | null} */ (document.getElementById("fk-bowler-name"))?.focus();
+  window.scrollTo({ top: 0 });
+});
+
 ui.quitYes.addEventListener("click", () => {
   const wasSaved = savedId === session.game?.id;
+  started = false;
   session.clear();
   ui.quitConfirm.hidden = true;
   ui.quitBtn.hidden = false;
