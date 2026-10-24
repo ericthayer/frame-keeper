@@ -2,6 +2,7 @@
 /**
  * <fk-scoreboard> — overhead-monitor style score sheet.
  * Properties: bowlers, active (index | -1), edit ({bowler, frame} | null), readonly.
+ * Methods: focusFrame(bowler, frame) moves keyboard focus to that frame button.
  * Events: "fk-frame" {bowler, frame} when a frame cell is tapped.
  */
 import { scoreFrames, currentScore, maxPossible, isGameComplete, FRAME_COUNT } from "../scoring.js";
@@ -17,6 +18,10 @@ export class FkScoreboard extends HTMLElement {
   #edit = null;
   #readonly = false;
   #queued = false;
+  /** Active bowler whose row was last scrolled into view. */
+  #shownActive = -1;
+  /** @type {{ bowler: number, frame: number } | null} Frame button to focus once the board is rendered. */
+  #focus = null;
 
   /** @param {BoardBowler[]} v */
   set bowlers(v) {
@@ -37,6 +42,20 @@ export class FkScoreboard extends HTMLElement {
   set readonly(v) {
     this.#readonly = v;
     this.#schedule();
+  }
+
+  /** Move keyboard focus to one bowler's frame button. @param {number} bowler @param {number} frame */
+  focusFrame(bowler, frame) {
+    this.#focus = { bowler, frame };
+    if (!this.#queued) this.#applyFocus();
+  }
+
+  #applyFocus() {
+    if (!this.#focus) return;
+    const { bowler, frame } = this.#focus;
+    this.#focus = null;
+    const row = this.querySelectorAll("tbody tr")[bowler];
+    /** @type {HTMLButtonElement | undefined} */ (row?.querySelectorAll(".frame__btn")[frame])?.focus();
   }
 
   connectedCallback() {
@@ -67,9 +86,15 @@ export class FkScoreboard extends HTMLElement {
     const table = h("table", { class: "board__table" }, h("caption", { class: "sr-only", text: label }), h("thead", {}, head), h("tbody", {}, rows));
     const scroller = h("div", { class: "board__scroll", tabindex: 0, role: "region", "aria-label": label }, table);
     this.replaceChildren(scroller);
-    // Keep the frame in play visible on narrow screens.
+    this.#applyFocus();
     if (!this.#readonly) {
       requestAnimationFrame(() => {
+        // On each turn change, bring the new bowler's row above the pinned pin pad.
+        if (this.#active !== this.#shownActive && !this.#edit) {
+          this.querySelector(".is-up .board__name")?.scrollIntoView({ block: "nearest" });
+          this.#shownActive = this.#active;
+        }
+        // Keep the frame in play visible on narrow screens.
         const cell = /** @type {HTMLElement | null} */ (this.querySelector(".is-now, .is-editing"));
         if (cell) scroller.scrollLeft = Math.max(0, cell.offsetLeft - scroller.clientWidth / 2 + cell.offsetWidth);
       });
@@ -106,10 +131,13 @@ export class FkScoreboard extends HTMLElement {
       const boxes = Array.from({ length: slots }, (_, k) =>
         h("span", { class: `mark${marks[k] === "X" ? " is-x" : marks[k] === "/" ? " is-spare" : ""}`, text: marks[k] ?? "" }),
       );
-      const inner = [h("span", { class: "marks" }, boxes), h("span", { class: "running", text: v.running ?? "" })];
+      // Spaces between boxes keep "X" and "19" separate words in the visible text (flex and grid hide them).
+      const inner = [h("span", { class: "marks" }, boxes.flatMap((box) => [box, " "])), " ", h("span", { class: "running", text: v.running ?? "" })];
       const cls = ["frame", fi === 9 ? "is-tenth" : "", now ? "is-now" : "", editing ? "is-editing" : ""].join(" ").trim();
       if (this.#readonly) return h("td", { class: cls }, inner);
-      const desc = `${b.name}, frame ${fi + 1}${v.balls.length ? `: ${v.marks.join(" ")}` : ""}${v.complete ? ", tap to correct" : ""}`;
+      // Name the button by exactly what it shows, so voice control users can say what they see.
+      const shown = [marks.filter(Boolean).join(" "), v.running ?? ""].filter((t) => t !== "").join(", ");
+      const desc = `${b.name}, frame ${fi + 1}${shown ? `: ${shown}` : ""}${v.complete ? ", tap to correct" : ""}`;
       return h("td", { class: cls }, h("button", { type: "button", class: "frame__btn", "aria-label": desc, onclick: () => emit(this, "fk-frame", { bowler: bi, frame: fi }) }, inner));
     });
     const total = currentScore(b.frames);
@@ -120,7 +148,9 @@ export class FkScoreboard extends HTMLElement {
       h("span", { class: "board__score", text: total }),
       !done && !this.#readonly ? h("span", { class: "board__max", title: "Best possible score", text: `max ${max}` }) : null,
     );
-    return h("tr", { class: `${isUp ? "is-up" : ""}${b.won ? " is-winner" : ""}` }, nameCell, cells, totalCell);
+    // A full lane shrinks the rows of bowlers who aren't up, so the active row fits above the pin pad.
+    const compact = !this.#readonly && this.#active >= 0 && this.#bowlers.length >= 5 && !isUp && this.#edit?.bowler !== bi;
+    return h("tr", { class: `${isUp ? "is-up" : ""}${b.won ? " is-winner" : ""}${compact ? " is-compact" : ""}` }, nameCell, cells, totalCell);
   }
 }
 

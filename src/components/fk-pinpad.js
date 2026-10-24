@@ -2,6 +2,7 @@
 /**
  * <fk-pinpad> — thumb-sized pin entry. Only legal counts are enabled.
  * Properties: max (pins standing, -1 = locked), fresh (full rack: strike vs spare), canUndo, label (who's up).
+ * Publishes its rendered height as the --pad-h custom property on the document element.
  * Methods: typed(error) clears the type box on success or shows why it stopped.
  * Events: "fk-roll" {pins}, "fk-undo", "fk-type" {text} (marks typed on the phone keyboard).
  */
@@ -26,6 +27,9 @@ export class FkPinpad extends HTMLElement {
   #input = null;
   /** @type {HTMLElement | null} */
   #msg = null;
+  #resize = new ResizeObserver(([entry]) => {
+    document.documentElement.style.setProperty("--pad-h", `${entry.borderBoxSize[0].blockSize}px`);
+  });
 
   /** @param {string} v */
   set label(v) {
@@ -55,6 +59,7 @@ export class FkPinpad extends HTMLElement {
   }
 
   connectedCallback() {
+    this.#resize.observe(this);
     if (this.#keys.size) return;
     this.classList.add("pad");
     this.#rack = h(
@@ -106,6 +111,11 @@ export class FkPinpad extends HTMLElement {
     this.append(h("div", { class: "pad__top" }, this.#rack, this.#who, this.#undoBtn), grid, form, this.#msg);
     this.addEventListener("keydown", (e) => this.#onKey(e));
     this.#sync();
+  }
+
+  disconnectedCallback() {
+    this.#resize.disconnect();
+    document.documentElement.style.removeProperty("--pad-h");
   }
 
   /** @param {string} key */
