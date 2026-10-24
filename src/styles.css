@@ -6,7 +6,7 @@
   --ink: #36190c;         /* walnut */
   --ink-soft: #6c4730;
   --line: #d8bd8c;
-  --orange: #c4471a;      /* burnt orange */
+  --orange: #b53e14;      /* burnt orange */
   --gold: #e7a336;        /* harvest gold */
   --avocado: #66701f;
   --walnut: #4a2412;
@@ -24,7 +24,7 @@
   --print-card: #f4e1b4;
   --print-ink: #36190c;
   --print-gold: #e7a336;
-  --print-orange: #c4471a;
+  --print-orange: #b53e14;
   --font-script: "Yellowtail", "Brush Script MT", cursive;
   --grain-opacity: .09;
   --grain-blend: multiply;
@@ -36,7 +36,7 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #1b100a; --surface: #2a180e; --surface-2: #331e12; --ink: #f6e4c0; --ink-soft: #c9a983;
+    --bg: #1b100a; --surface: #2a180e; --surface-2: #331e12; --ink: #f6e4c0; --ink-soft: #d8bb96;
     --line: #4c3020; --orange: #f0773a; --gold: #f2b445; --avocado: #a7b34c; --walnut: #120a06;
     --on-accent: #1b100a; --up: #4a3112; --danger: #ff7a66; --shadow: 0 0 0;
     --grain-opacity: .06; --grain-blend: screen;
@@ -44,7 +44,7 @@
   }
 }
 :root[data-theme="dark"] {
-  --bg: #1b100a; --surface: #2a180e; --surface-2: #331e12; --ink: #f6e4c0; --ink-soft: #c9a983;
+  --bg: #1b100a; --surface: #2a180e; --surface-2: #331e12; --ink: #f6e4c0; --ink-soft: #d8bb96;
   --line: #4c3020; --orange: #f0773a; --gold: #f2b445; --avocado: #a7b34c; --walnut: #120a06;
   --on-accent: #1b100a; --up: #4a3112; --danger: #ff7a66; --shadow: 0 0 0;
   --grain-opacity: .06; --grain-blend: screen;
@@ -309,7 +309,7 @@ body::after {
 .key:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 #a7703d; }
 .key:disabled { opacity: .22; box-shadow: none; }
 .key--strike { background: #e7a336; box-shadow: 0 5px 0 #8f5a12; font-family: var(--font-display); }
-.key--spare { background: #c4471a; color: #fff6e3; box-shadow: 0 5px 0 #6e220a; font-family: var(--font-display); }
+.key--spare { background: #b53e14; color: #fff6e3; box-shadow: 0 5px 0 #6e220a; font-family: var(--font-display); }
 .key--gutter { background: #b9a07c; }
 
 /* ---------- Live lanes ---------- */
@@ -499,6 +499,18 @@ select.scan__name { appearance: auto; }
     .podiums:not(.podiums--bonus) { grid-template-columns: repeat(3, 1fr); }
     .pad { max-width: 460px; justify-self: center; width: 100%; }
   }
+}
+
+/* ---------- Short landscape ---------- */
+/* The pad moves beside the sheet and sticks to the top, so the active row and every key share the screen.
+   A height query needs a size container, which .app can't be, so this one stays a media query. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .live { grid-template-columns: minmax(0, 1fr) minmax(240px, 300px); align-items: start; }
+  .live > * { grid-column: 1; }
+  /* Span the five rows always shown in a game (now up, tools, sheet, tip, footer) so no empty row adds a gap. */
+  .live .pad { grid-column: 2; grid-row: 1 / span 5; top: 8px; bottom: auto; }
+  /* The pad no longer covers the bottom of the sheet, so a row scrolled into view only clears the tab bar. */
+  .board__name { scroll-margin-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + 8px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
