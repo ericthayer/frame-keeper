@@ -85,6 +85,21 @@ export class GameSession extends EventTarget {
     this.#commit();
   }
 
+  /**
+   * Load a finished (or partly read) game from a scoreboard photo; the scorekeeper can still fix any frame.
+   * @param {string} venue
+   * @param {Array<{ name: string, frames: number[][] }>} bowlers
+   * @returns {void}
+   */
+  load(venue, bowlers) {
+    this.start(venue, bowlers.map((b) => b.name));
+    const g = /** @type {LiveGame} */ (this.game);
+    g.bowlers.forEach((b, i) => (b.frames = bowlers[i].frames.map((f) => [...f])));
+    const next = g.bowlers.findIndex((b) => !isGameComplete(b.frames));
+    g.active = next < 0 ? 0 : next;
+    this.#commit();
+  }
+
   /** @returns {void} */
   clear() {
     this.game = null;

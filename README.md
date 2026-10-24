@@ -14,6 +14,8 @@ A 70s-alley bowling scorekeeper for league night. It scores 10-frame games, save
 | Game night | Autosaves the game in progress on the phone, keeps the screen awake, and plays marquee celebrations for strikes, spares, turkeys, gutters and 300 games (vibration where supported). |
 | History | Shared match history with the full score sheet, Share (system share sheet or copy to clipboard), Rematch, and Delete with a confirm step. |
 | Live lanes | On the Netlify site, the scorekeeper taps **Share live** to get a 4-letter lane code. Anyone can open `#watch-CODE`, or type the code on the Lanes screen, to follow the scoreboard on their own phone. It updates about every 2 seconds and shows the strike and spare celebrations too. Only the phone that started sharing can update its lane, and a lane expires after 12 hours. |
+| Scan a scoreboard | Forgot to keep score? On the splash screen, snap the alley's score display. Claude Opus 5.5, running through Netlify AI Gateway (`/api/scan`), reads each bowler's marks. The app checks every frame against the bowling rules, adds up the totals itself, and compares them with the totals printed on the screen. You review the names, then load the game, and can tap any frame to fix it. |
+| Photos & send-off | After saving a game, add up to 8 photos (`/api/photos`, Netlify Blobs; shrunk on the phone first). Enter each bowler's email (remembered on that phone only) and tap **Email the results**: your mail app opens with the scores and a link (`#game-<id>`) to the score sheet and photos. **Share photos** sends the actual image files through the phone's share sheet where supported. |
 | Leaderboard | Top 3 for **Pin Count**, **Games Won** and **Games Bowled**, plus High Game, Best Average, and a stat sheet for every bowler. Filter by all time, this year or the last 30 days. Tied scores share a rank, and a game needs 2+ bowlers to award a win. |
 
 ## Architecture
@@ -30,6 +32,8 @@ src/components/fk-*.js   <fk-scoreboard> <fk-pinpad> <fk-setup> <fk-leaderboard>
 netlify/functions/games.mts   GET/POST/DELETE /api/games on Netlify Blobs
 netlify/functions/live.mts    GET/PUT/DELETE /api/live/:code (watch a game in progress)
 src/live.js, src/live-ui.js   Live lane sharing (scorekeeper) and watching (everyone else)
+netlify/functions/scan.mts    POST /api/scan (scoreboard photo → frames, via Netlify AI Gateway)
+netlify/functions/photos.mts  POST/GET/DELETE /api/photos/:gameId[/:photoId]
 ```
 
 ### Where games are stored

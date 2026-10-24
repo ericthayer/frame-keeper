@@ -8,9 +8,13 @@ import "./components/fk-history.js";
 import "./components/fk-celebrate.js";
 import { GameSession } from "./game.js";
 import { connectStore } from "./store.js";
-import { aggregate, gameResults, shareText } from "./stats.js";
+import { aggregate } from "./stats.js";
+import { shareResult } from "./share.js";
 import { currentScore } from "./scoring.js";
 import { initLive } from "./live-ui.js";
+import { keepAwake as requestWake } from "./wake.js";
+import "./components/fk-scan.js";
+import "./components/fk-sendoff.js";
 import { normalizeCode } from "./live.js";
 
 /** @typedef {import("./stats.js").SavedGame} SavedGame */
@@ -28,6 +32,8 @@ const ui = {
   setup: /** @type {import("./components/fk-setup.js").FkSetup} */ ($("setup")),
   live: $("live"),
   splash: $("splash"),
+  scan: /** @type {import("./components/fk-scan.js").FkScan} */ ($("scan")),
+  sendoff: /** @type {import("./components/fk-sendoff.js").FkSendoff} */ ($("sendoff")),
   splashStart: /** @type {HTMLButtonElement} */ ($("splash-start")),
   board: /** @type {import("./components/fk-scoreboard.js").FkScoreboard} */ ($("board")),
   pad: /** @type {import("./components/fk-pinpad.js").FkPinpad} */ ($("pad")),
@@ -62,6 +68,8 @@ let store = null;
 let games = [];
 /** @type {string | null} Live game id already saved, so Save can't double-post. */
 let savedId = null;
+/** @type {SavedGame | null} The record just saved, until history reloads with it. */
+let savedRecord = null;
 /** Splash screen until someone taps Start; it returns when a game ends. */
 let started = false;
 
@@ -70,11 +78,12 @@ const VIEWS = ["lanes", "leaders", "history"];
 /** @type {ReturnType<typeof initLive> | null} */
 let live = null;
 
-/** "#watch-KQZP" opens the live view for that lane. @param {string} name @param {boolean} [focus] */
+/** "#watch-KQZP" opens a live lane; "#game-<id>" opens a saved game. @param {string} name @param {boolean} [focus] */
 function show(name, focus = false) {
   const watchCode = name.startsWith("watch-") ? normalizeCode(name.slice(6)) : null;
-  const view = watchCode ? "watch" : VIEWS.includes(name) ? name : "lanes";
-  const hash = watchCode ? `watch-${watchCode}` : view;
+  const gameId = name.startsWith("game-") ? name.slice(5) : null;
+  const view = watchCode ? "watch" : gameId ? "history" : VIEWS.includes(name) ? name : "lanes";
+  const hash = watchCode ? `watch-${watchCode}` : gameId ? `game-${gameId}` : view;
   // Sections are "view-*" so the route hash never triggers an anchor jump.
   for (const el of ui.views) el.hidden = el.id !== `view-${view}`;
   for (const tab of ui.tabs) tab.setAttribute("aria-current", tab.dataset.view === view ? "page" : "false");
@@ -82,6 +91,7 @@ function show(name, focus = false) {
   live?.setWatching(watchCode);
   if (focus) $(`${view}-title`).focus({ preventScroll: true });
   window.scrollTo({ top: 0 });
+  if (gameId) ui.history.focusGame(gameId);
 }
 for (const tab of ui.tabs) tab.addEventListener("click", () => show(tab.dataset.view ?? "lanes", true));
 window.addEventListener("hashchange", () => show(location.hash.slice(1)));
@@ -136,6 +146,9 @@ function renderGame() {
     ui.saveBtn.disabled = saved || !store;
     ui.saveBtn.textContent = saved ? "Saved ✓" : "Save to history";
   }
+  // Photos and send-off need the shared Netlify history and a saved game.
+  const savedGame = complete && savedId === g.id && store?.kind === "netlify" ? games.find((x) => x.id === g.id) ?? savedRecord : null;
+  ui.sendoff.game = savedGame;
 }
 session.addEventListener("change", renderGame);
 
@@ -187,6 +200,7 @@ ui.saveBtn.addEventListener("click", async () => {
   try {
     await store.save(record);
     savedId = g.id;
+    savedRecord = record;
     ui.saveStatus.textContent = store.shared ? "In the books. Everyone can see it in History." : "Saved on this phone.";
     renderGame();
   } catch (err) {
@@ -194,6 +208,16 @@ ui.saveBtn.addEventListener("click", async () => {
     ui.saveStatus.textContent = `Didn't save: ${err instanceof Error ? err.message : "unknown error"}. Tap Save to try again.`;
   }
 });
+
+ui.scan.addEventListener("fk-scan-load", (e) => {
+  const { bowlers } = /** @type {CustomEvent<{ bowlers: Array<{ name: string, frames: number[][] }> }>} */ (e).detail;
+  session.load("", bowlers);
+  savedId = null;
+  started = true;
+  window.scrollTo({ top: 0 });
+  toast(session.complete ? "Scores loaded. Check them, then save." : "Scores loaded. Finish the missing frames on the pad.");
+});
+ui.sendoff.addEventListener("fk-photos-changed", () => store?.refresh());
 
 ui.quitBtn.addEventListener("click", () => {
   ui.quitConfirm.hidden = false;
@@ -225,30 +249,18 @@ ui.quitYes.addEventListener("click", () => {
 function renderHistory() {
   ui.leaders.games = games;
   ui.history.games = games;
-  ui.setup.knownNames = aggregate(games)
+  const known = aggregate(games)
     .sort((a, b) => b.games - a.games)
     .map((s) => s.name);
+  ui.setup.knownNames = known;
+  ui.scan.knownNames = known;
+  renderGame();
 }
 
-ui.history.addEventListener("fk-share", async (e) => {
+ui.history.addEventListener("fk-share", (e) => {
   const { id } = /** @type {CustomEvent<{ id: string }>} */ (e).detail;
   const game = games.find((g) => g.id === id);
-  if (!game) return;
-  const text = shareText(game);
-  try {
-    if (navigator.share) {
-      await navigator.share({ text, ...(location.protocol.startsWith("http") && !store?.kind.includes("claude") ? { url: `${location.origin}/#history` } : {}) });
-      return;
-    }
-  } catch (err) {
-    if (err instanceof DOMException && err.name === "AbortError") return;
-  }
-  try {
-    await navigator.clipboard.writeText(text);
-    toast("Result copied. Paste it in the group chat.");
-  } catch {
-    toast(`${gameResults(game)[0].name} won with ${gameResults(game)[0].total}. Copy blocked here.`);
-  }
+  if (game) shareResult(game, store?.kind === "netlify", toast);
 });
 ui.history.addEventListener("fk-delete", async (e) => {
   const { id } = /** @type {CustomEvent<{ id: string }>} */ (e).detail;
@@ -270,18 +282,7 @@ ui.history.addEventListener("fk-rematch", (e) => {
 });
 
 /* ---------- Screen wake lock while bowling ---------- */
-/** @type {{ release(): Promise<void> } | null} */
-let wakeLock = null;
-async function keepAwake() {
-  const nav = /** @type {Navigator & { wakeLock?: { request(t: "screen"): Promise<{ release(): Promise<void> }> } }} */ (navigator);
-  if (!nav.wakeLock || !session.game || session.complete || wakeLock) return;
-  try {
-    wakeLock = await nav.wakeLock.request("screen");
-    /** @type {EventTarget} */ (/** @type {unknown} */ (wakeLock)).addEventListener?.("release", () => (wakeLock = null));
-  } catch {
-    wakeLock = null;
-  }
-}
+const keepAwake = () => requestWake(() => !!session.game && !session.complete);
 document.addEventListener("visibilitychange", () => document.visibilityState === "visible" && keepAwake());
 
 /* ---------- Boot ---------- */
@@ -296,6 +297,7 @@ connectStore().then((s) => {
   ui.sync.textContent = s.label;
   ui.sync.dataset.kind = s.kind;
   live?.setAvailable(s.kind === "netlify");
+  ui.scan.hidden = s.kind !== "netlify";
   ui.sync.title = s.shared ? "Saved games are shared with everyone who opens this app." : "Games stay on this device.";
   renderGame();
   s.watch(

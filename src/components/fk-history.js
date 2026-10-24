@@ -6,6 +6,7 @@
  */
 import { h, emit, formatDate, art } from "../dom.js";
 import { gameResults } from "../stats.js";
+import { photoUrl } from "../media.js";
 import "./fk-scoreboard.js";
 
 /** @typedef {import("../stats.js").SavedGame} SavedGame */
@@ -16,11 +17,35 @@ export class FkHistory extends HTMLElement {
   /** @type {string | null} */
   #confirming = null;
   #limit = 20;
+  /** @type {string | null} Game to open from a "#game-<id>" link once it loads. */
+  #focus = null;
+
+  /** Open and scroll to one game (from an emailed link). @param {string} id */
+  focusGame(id) {
+    this.#focus = id;
+    this.#applyFocus();
+  }
+
+  #applyFocus() {
+    if (!this.#focus) return;
+    const idx = this.#games.findIndex((g) => g.id === this.#focus);
+    if (idx < 0) return;
+    if (idx >= this.#limit) {
+      this.#limit = idx + 1;
+      this.#render();
+    }
+    const card = /** @type {HTMLDetailsElement | null} */ (this.querySelector(`details[data-id="${CSS.escape(this.#focus)}"]`));
+    if (!card) return;
+    card.open = true;
+    this.#focus = null;
+    requestAnimationFrame(() => card.scrollIntoView({ block: "start" }));
+  }
 
   /** @param {SavedGame[]} v */
   set games(v) {
     this.#games = v;
     if (this.isConnected) this.#render();
+    this.#applyFocus();
   }
 
   connectedCallback() {
@@ -78,6 +103,7 @@ export class FkHistory extends HTMLElement {
       h("span", { class: "card__meta" },
         h("time", { datetime: g.playedAt, text: formatDate(g.playedAt) }),
         g.venue ? h("span", { class: "card__venue", text: g.venue }) : null,
+        g.photos?.length ? h("span", { class: "card__photos", text: `${g.photos.length} photo${g.photos.length === 1 ? "" : "s"}` }) : null,
       ),
       h("ol", { class: "card__results" }, results.map((r) =>
         h("li", { class: r.won ? "is-winner" : "" },
@@ -87,7 +113,14 @@ export class FkHistory extends HTMLElement {
         ),
       )),
     );
-    const details = h("details", { class: "card", "data-id": g.id, open }, summary, board, actions);
+    const photos = g.photos?.length
+      ? h("ul", { class: "photo-grid photo-grid--card", "aria-label": "Game photos" },
+          g.photos.map((p, i) => h("li", { class: "photo-grid__item" },
+            h("a", { href: photoUrl(g.id, p), target: "_blank", rel: "noopener" }, h("img", { src: photoUrl(g.id, p), alt: `Photo ${i + 1} from this game`, loading: "lazy" })),
+          )),
+        )
+      : null;
+    const details = h("details", { class: "card", "data-id": g.id, open }, summary, board, photos, actions);
     return h("li", {}, details);
   }
 }

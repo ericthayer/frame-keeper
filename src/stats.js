@@ -12,6 +12,7 @@ import { currentScore, countMarks, isGameComplete, isValidFrames } from "./scori
  * @property {string} playedAt   ISO timestamp.
  * @property {string} venue
  * @property {SavedBowler[]} bowlers
+ * @property {string[]} [photos]  Photo ids served at /api/photos/<game id>/<photo id>.
  *
  * @typedef {Object} BowlerResult
  * @property {string} name
@@ -36,6 +37,8 @@ import { currentScore, countMarks, isGameComplete, isValidFrames } from "./scori
  */
 
 export const MAX_BOWLERS = 8;
+export const MAX_PHOTOS = 8;
+export const PHOTO_ID = /^[a-z0-9-]{8,40}$/;
 export const MAX_NAME = 20;
 
 /**
@@ -71,11 +74,15 @@ export function parseGame(raw) {
     if (!isValidFrames(frames) || !isGameComplete(frames)) return null;
     bowlers.push({ name: cleanName(name), frames });
   }
+  const photos = Array.isArray(g.photos)
+    ? g.photos.filter(/** @returns {p is string} */ (p) => typeof p === "string" && PHOTO_ID.test(p)).slice(0, MAX_PHOTOS)
+    : [];
   return {
     id: g.id.slice(0, 64),
     playedAt: g.playedAt,
     venue: typeof g.venue === "string" ? g.venue.slice(0, 40) : "",
     bowlers,
+    ...(photos.length ? { photos } : {}),
   };
 }
 
