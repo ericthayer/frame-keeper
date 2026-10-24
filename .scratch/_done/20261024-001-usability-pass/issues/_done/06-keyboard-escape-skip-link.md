@@ -1,6 +1,6 @@
 # [AFK] 2b — Keyboard: Escape cancels a frame fix, focus returns, skip link to the pad
 
-Status: ready-for-agent
+Status: done
 
 ## Parent
 

@@ -1,6 +1,6 @@
 # [AFK] 1b — Final card: no tap discards an unsaved game
 
-Status: ready-for-agent
+Status: done
 
 ## Parent
 

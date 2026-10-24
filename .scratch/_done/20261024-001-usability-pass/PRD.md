@@ -1,6 +1,6 @@
 # PRD: Usability pass after the first league night
 
-Status: tracking
+Status: done
 
 ## Architecture Overview
 

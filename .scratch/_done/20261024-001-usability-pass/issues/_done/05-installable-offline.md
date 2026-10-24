@@ -1,6 +1,6 @@
 # [AFK] 2a — Installable offline app: manifest, icons, service worker
 
-Status: ready-for-agent
+Status: done
 
 ## Parent
 

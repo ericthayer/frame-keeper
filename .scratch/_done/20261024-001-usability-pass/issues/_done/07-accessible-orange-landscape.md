@@ -1,6 +1,6 @@
 # [AFK] 2c — Accessible orange and a landscape layout
 
-Status: ready-for-agent
+Status: done
 
 ## Parent
 

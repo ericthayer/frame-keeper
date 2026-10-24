@@ -1,6 +1,6 @@
 # [AFK] 1c — History game times, quieter watch polling, no sideways scroll
 
-Status: ready-for-agent
+Status: done
 
 ## Parent
 

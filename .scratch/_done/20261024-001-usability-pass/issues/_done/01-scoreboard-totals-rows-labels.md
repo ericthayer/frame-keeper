@@ -1,6 +1,6 @@
 # [AFK] 1a — Scoreboard: pinned totals, visible active row, compact rows, frame-button names
 
-Status: ready-for-agent
+Status: done
 
 ## Parent
 

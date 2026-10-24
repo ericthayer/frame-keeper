@@ -1,6 +1,6 @@
 # [AFK] 1d — Fast loads: bundled, hashed, long-cached assets
 
-Status: ready-for-agent
+Status: done
 
 ## Parent
 
