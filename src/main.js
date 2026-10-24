@@ -161,7 +161,15 @@ ui.board.addEventListener("fk-frame", (e) => {
   const { bowler, frame } = /** @type {CustomEvent<{ bowler: number, frame: number }>} */ (e).detail;
   session.select(bowler, frame);
 });
-ui.editCancel.addEventListener("click", () => session.cancelEdit());
+/** Drops the frame fix and puts keyboard focus back on the frame that was being fixed. */
+function cancelFix() {
+  if (!session.edit) return;
+  const { bowler, frame } = session.edit;
+  session.cancelEdit();
+  ui.board.focusFrame(bowler, frame);
+}
+ui.editCancel.addEventListener("click", cancelFix);
+document.addEventListener("keydown", (e) => e.key === "Escape" && cancelFix());
 
 ui.setup.addEventListener("fk-start", (e) => {
   const { venue, names } = /** @type {CustomEvent<{ venue: string, names: string[] }>} */ (e).detail;
