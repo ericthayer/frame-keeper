@@ -57,6 +57,22 @@ test("a game in progress is still on screen after reloading offline", async () =
   await ctx.close();
 });
 
+test("on a very slow connection the cached app opens within a few seconds", async () => {
+  const { page, ctx, api } = await visitOnline();
+  server.state.pageDelayMs = 20000;
+  try {
+    const started = Date.now();
+    await page.reload({ waitUntil: "commit", timeout: 10000 });
+    await page.waitForSelector("#splash-start", { timeout: 10000 });
+    const waited = Date.now() - started;
+    assert.ok(waited < 6000, `the app took ${waited}ms to open`);
+    assert.deepEqual(api.errors, []);
+  } finally {
+    server.state.pageDelayMs = 0;
+    await ctx.close();
+  }
+});
+
 test("/api/* requests are never answered by the service worker or kept in its cache", async () => {
   const { page, ctx } = await visitOnline({ games: [] });
   /** @type {import("playwright").Response[]} */

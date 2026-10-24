@@ -13,13 +13,15 @@ const TYPES = {
   ".jpg": "image/jpeg", ".ico": "image/x-icon", ".txt": "text/plain",
 };
 
-/** Static server over dist/. Resolves { url, close }. */
+/** Static server over dist/. Resolves { url, close, state }; set state.pageDelayMs to slow HTML responses. */
 function startServer(dir = DIST) {
-  const server = http.createServer((req, res) => {
+  const state = { pageDelayMs: 0 };
+  const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, "http://x");
     let file = path.join(dir, decodeURIComponent(url.pathname));
     if (!file.startsWith(dir)) return res.writeHead(403).end();
     if (url.pathname.endsWith("/")) file = path.join(file, "index.html");
+    if (state.pageDelayMs && file.endsWith(".html")) await new Promise((r) => setTimeout(r, state.pageDelayMs));
     fs.readFile(file, (err, data) => {
       if (err) return res.writeHead(404).end("not found");
       res.writeHead(200, { "content-type": TYPES[path.extname(file)] ?? "application/octet-stream" });
@@ -28,7 +30,7 @@ function startServer(dir = DIST) {
   });
   return new Promise((resolve) => server.listen(0, "127.0.0.1", () => {
     const { port } = server.address();
-    resolve({ url: `http://127.0.0.1:${port}`, close: () => new Promise((r) => server.close(r)) });
+    resolve({ url: `http://127.0.0.1:${port}`, state, close: () => new Promise((r) => { server.closeAllConnections(); server.close(r); }) });
   }));
 }
 

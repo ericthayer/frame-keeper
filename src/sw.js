@@ -44,14 +44,27 @@ worker.addEventListener("fetch", (/** @type {FetchEvent} */ event) => {
   else if (FONT_HOSTS.has(url.hostname)) event.respondWith(cachedFont(request));
 });
 
-/** Pages come fresh from the network; with no signal the cached shell stands in. @param {Request} request */
+/** How long a page load waits on weak signal before the cached shell stands in. */
+const PAGE_WAIT_MS = 3000;
+
+/** Pages come fresh from the network; with no or very slow signal the cached shell stands in. @param {Request} request */
 async function pageOrShell(request) {
+  const network = fetch(request);
+  network.catch(() => undefined); // a late failure after the shell was served is expected, not an error
+  const shell = caches.match("/", { cacheName: SHELL });
+  /** @type {ReturnType<typeof setTimeout> | undefined} */
+  let timer;
+  const slow = new Promise((resolve) => { timer = setTimeout(resolve, PAGE_WAIT_MS); });
   try {
-    return await fetch(request);
+    const first = await Promise.race([network, slow]);
+    if (first) return first;
+    return (await shell) ?? (await network);
   } catch (err) {
-    const shell = await caches.match("/", { cacheName: SHELL });
-    if (shell) return shell;
+    const cached = await shell;
+    if (cached) return cached;
     throw err;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
