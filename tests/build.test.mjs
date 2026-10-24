@@ -65,3 +65,56 @@ test("app.html (the Claude artifact) still loads the unbundled ES modules from s
     assert.ok(existsSync(new URL(url, root)), `${url} missing`);
   }
 });
+
+/** href of the first <link> whose rel attribute is exactly `rel`. */
+function linkHref(page, rel) {
+  const tag = [...page.matchAll(/<link\b[^>]*>/g)].map((m) => m[0]).find((t) => t.includes(`rel="${rel}"`));
+  return tag?.match(/\bhref="([^"]+)"/)?.[1];
+}
+
+/** Width and height from a PNG file's IHDR chunk; throws if the file is not a PNG. */
+async function pngSize(url) {
+  const buf = await readFile(new URL(url.replace(/^\//, ""), dist));
+  assert.equal(buf.subarray(1, 4).toString("latin1"), "PNG", `${url} is not a PNG`);
+  return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
+}
+
+test("dist/index.html links an installable manifest with 192px and 512px PNG icons", async () => {
+  const href = linkHref(html, "manifest");
+  assert.ok(href, "no <link rel=manifest>");
+  const manifest = JSON.parse(await readFile(new URL(href.replace(/^\//, ""), dist), "utf8"));
+  assert.equal(manifest.name, "Frame Keeper");
+  assert.equal(manifest.display, "standalone");
+  assert.match(manifest.theme_color, /^#[0-9a-f]{6}$/i);
+  for (const px of [192, 512]) {
+    const icon = manifest.icons.find((/** @type {{ sizes: string }} */ i) => i.sizes === `${px}x${px}`);
+    assert.ok(icon, `no ${px}px icon`);
+    assert.equal(icon.type, "image/png");
+    assert.deepEqual(await pngSize(icon.src), { width: px, height: px });
+  }
+});
+
+test("dist/index.html links an apple-touch-icon PNG", async () => {
+  const href = linkHref(html, "apple-touch-icon");
+  assert.ok(href, "no <link rel=apple-touch-icon>");
+  const { width } = await pngSize(href);
+  assert.ok(width >= 180, `apple-touch-icon is ${width}px`);
+});
+
+test("dist/sw.js precaches this build's page, hashed assets, manifest and icons", async () => {
+  const sw = await readFile(new URL("sw.js", dist), "utf8");
+  const files = JSON.parse(sw.match(/self\.FK_SHELL=(\{.*?\});/)?.[1] ?? "null")?.files;
+  assert.ok(Array.isArray(files), "sw.js has no precache list");
+  const { scripts, styles } = localAssets(html);
+  const expected = ["/", ...[...scripts, ...styles].map((u) => `/${u}`), linkHref(html, "manifest"), linkHref(html, "apple-touch-icon")];
+  for (const file of expected) assert.ok(files.includes(file), `${file} not precached`);
+  for (const file of files) assert.ok(existsSync(new URL(file === "/" ? "index.html" : file.slice(1), dist)), `${file} missing from dist/`);
+});
+
+test("only the Netlify build registers the service worker, and it is never cached as immutable", async () => {
+  assert.match(html, /<meta name="fk:service-worker" content="\/sw\.js">/);
+  const artifact = await readFile(new URL("app.html", root), "utf8");
+  assert.doesNotMatch(artifact, /fk:service-worker|rel="manifest"/);
+  const headers = await cacheControlByPath();
+  for (const path of ["/sw.js", "/manifest.webmanifest"]) assert.equal(headers.get(path), "public, max-age=0, must-revalidate");
+});
