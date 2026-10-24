@@ -125,6 +125,8 @@ function renderGame() {
   ui.pad.fresh = t?.fresh ?? true;
   ui.pad.canUndo = session.canUndo || !!session.edit;
   ui.pad.hidden = complete && !session.edit;
+  if (t && !complete) ui.pad.label = `${session.edit ? "Fixing " : ""}${g.bowlers[t.bowler].name} · F${t.frame + 1} · Ball ${t.ball + 1}`;
+  else if (t && session.edit) ui.pad.label = `Fixing ${g.bowlers[t.bowler].name} · F${t.frame + 1}`;
 
   ui.editBanner.hidden = !session.edit;
   if (session.edit && t) ui.editText.textContent = `Fixing ${g.bowlers[t.bowler].name}'s frame ${t.frame + 1} · ball ${t.ball + 1}`;
@@ -157,14 +159,25 @@ ui.pad.addEventListener("fk-roll", (e) => {
   const g = session.game;
   const who = g ? g.bowlers[g.active].name : "";
   const moment = session.roll(pins);
+  if (moment) celebrateMoment(moment, who);
+});
+
+/** @param {import("./game.js").Moment} moment @param {string} who */
+function celebrateMoment(moment, who) {
   if (moment === "strike") ui.celebrate.show("STRIKE!", "strike");
   else if (moment === "turkey") ui.celebrate.show("TURKEY!", "big");
   else if (moment === "perfect") ui.celebrate.show("PERFECT 300!", "big");
   else if (moment === "spare") ui.celebrate.show("SPARE!", "spare");
-  else if (moment === "gutter") ui.celebrate.show(`Gutter, ${who}`, "gutter");
+  else if (moment === "gutter") ui.celebrate.show(who ? `Gutter, ${who}` : "Gutter ball", "gutter");
   else if (moment === "final") ui.celebrate.show(ui.finalWinner.textContent ?? "Final!", "big");
-});
+}
 ui.pad.addEventListener("fk-undo", () => session.undo());
+ui.pad.addEventListener("fk-type", (e) => {
+  const { text } = /** @type {CustomEvent<{ text: string }>} */ (e).detail;
+  const { moment, error } = session.typeMarks(text);
+  ui.pad.typed(error);
+  if (moment) celebrateMoment(moment, "");
+});
 ui.board.addEventListener("fk-frame", (e) => {
   const { bowler, frame } = /** @type {CustomEvent<{ bowler: number, frame: number }>} */ (e).detail;
   session.select(bowler, frame);
@@ -176,13 +189,20 @@ ui.setup.addEventListener("fk-start", (e) => {
   session.start(venue, names);
   savedId = null;
   keepAwake();
+  showSheet();
 });
+
+/** Bring the sheet to the top so the pinned pad (which shows who's up) never hides the scores. */
+function showSheet() {
+  requestAnimationFrame(() => ui.board.scrollIntoView({ block: "start" }));
+}
 
 /** @param {string[]} names @param {string} [venue] */
 function rematch(names, venue = "") {
   session.start(venue, names);
   savedId = null;
   show("lanes");
+  showSheet();
   toast("New game, same crew. Good luck!");
 }
 ui.rematchBtn.addEventListener("click", () => {
