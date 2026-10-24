@@ -160,6 +160,36 @@ export class GameSession extends EventTarget {
     return this.complete ? "final" : moment;
   }
 
+  /**
+   * Enter balls typed on the phone keyboard, e.g. "X 7/ 9- 81". Marks: X, /, - (or G, F, 0), digits.
+   * Stops at the first mark that doesn't fit and says why.
+   * @param {string} text
+   * @returns {{ entered: number, moment: Moment | null, error: string }}
+   */
+  typeMarks(text) {
+    const marks = text.toUpperCase().replace(/[\s,.]+/g, "").split("");
+    let entered = 0;
+    /** @type {Moment | null} */
+    let moment = null;
+    for (const mark of marks) {
+      const t = this.target;
+      const max = this.maxPins;
+      if (!t || max < 0) return { entered, moment, error: entered ? "" : "This game is already finished." };
+      let pins = -1;
+      if (mark === "X") pins = t.fresh ? max : -1;
+      else if (mark === "/") pins = !t.fresh && max > 0 ? max : -1;
+      else if (mark === "-" || mark === "G" || mark === "F") pins = 0;
+      else if (/^[0-9]$/.test(mark)) pins = Number(mark);
+      else return { entered, moment, error: `"${mark}" isn't a bowling mark. Use X, /, - or 0-9.` };
+      if (pins < 0 || pins > max) {
+        return { entered, moment, error: `"${mark}" doesn't fit frame ${t.frame + 1}, ball ${t.ball + 1}: ${max} pin${max === 1 ? "" : "s"} standing.` };
+      }
+      moment = this.roll(pins) ?? moment;
+      entered++;
+    }
+    return { entered, moment, error: entered ? "" : "Type a mark like X, 7/, 9- or 81." };
+  }
+
   /** @returns {void} */
   undo() {
     if (this.edit) {

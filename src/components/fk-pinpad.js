@@ -1,8 +1,9 @@
 // @ts-check
 /**
  * <fk-pinpad> — thumb-sized pin entry. Only legal counts are enabled.
- * Properties: max (pins standing, -1 = locked), fresh (full rack: strike vs spare), canUndo.
- * Events: "fk-roll" {pins}, "fk-undo".
+ * Properties: max (pins standing, -1 = locked), fresh (full rack: strike vs spare), canUndo, label (who's up).
+ * Methods: typed(error) clears the type box on success or shows why it stopped.
+ * Events: "fk-roll" {pins}, "fk-undo", "fk-type" {text} (marks typed on the phone keyboard).
  */
 import { h, emit } from "../dom.js";
 
@@ -19,6 +20,23 @@ export class FkPinpad extends HTMLElement {
   #undoBtn = null;
   /** @type {HTMLElement | null} */
   #rack = null;
+  /** @type {HTMLElement | null} */
+  #who = null;
+  /** @type {HTMLInputElement | null} */
+  #input = null;
+  /** @type {HTMLElement | null} */
+  #msg = null;
+
+  /** @param {string} v */
+  set label(v) {
+    if (this.#who) this.#who.textContent = v;
+  }
+
+  /** Feedback after the shell applies typed marks. @param {string} error */
+  typed(error) {
+    if (this.#msg) this.#msg.textContent = error;
+    if (!error && this.#input) this.#input.value = "";
+  }
 
   /** @param {number} v */
   set max(v) {
@@ -67,7 +85,25 @@ export class FkPinpad extends HTMLElement {
       }),
     );
     this.#undoBtn = h("button", { type: "button", class: "pad__undo", onclick: () => emit(this, "fk-undo", null) }, h("span", { "aria-hidden": "true", text: "↶ " }), "Undo");
-    this.append(h("div", { class: "pad__top" }, this.#rack, this.#undoBtn), grid);
+    this.#who = h("p", { class: "pad__who", "aria-live": "polite" });
+    // Native keyboard entry: type marks the way they look on a score sheet.
+    this.#input = h("input", {
+      id: "fk-type", class: "pad__input", type: "text", inputmode: "text", autocapitalize: "characters",
+      autocomplete: "off", autocorrect: "off", spellcheck: "false", enterkeyhint: "go", maxlength: 24,
+      placeholder: "Or type: X  7/  9-  81", "aria-describedby": "fk-type-help",
+    });
+    this.#msg = h("p", { class: "pad__msg", role: "status" });
+    const form = h("form", { class: "pad__type", novalidate: true },
+      h("label", { class: "sr-only", for: "fk-type", text: "Type marks" }),
+      this.#input,
+      h("button", { type: "submit", class: "pad__enter", text: "Enter" }),
+      h("p", { class: "sr-only", id: "fk-type-help", text: "X for a strike, slash for a spare, dash for a gutter, digits for pins. Type one frame or several." }),
+    );
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      emit(this, "fk-type", { text: this.#input?.value ?? "" });
+    });
+    this.append(h("div", { class: "pad__top" }, this.#rack, this.#who, this.#undoBtn), grid, form, this.#msg);
     this.addEventListener("keydown", (e) => this.#onKey(e));
     this.#sync();
   }
@@ -81,6 +117,7 @@ export class FkPinpad extends HTMLElement {
 
   /** Hardware keyboard: digits, x, /, backspace. @param {KeyboardEvent} e */
   #onKey(e) {
+    if (e.target instanceof HTMLInputElement) return; // typing in the marks box
     const k = e.key.toUpperCase();
     if (k === "BACKSPACE") return emit(this, "fk-undo", null);
     if (k === "-") return this.#press("0");
