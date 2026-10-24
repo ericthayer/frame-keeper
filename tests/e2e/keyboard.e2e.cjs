@@ -1,7 +1,7 @@
 // Story 7: score from the keyboard alone — Escape cancels a frame fix, focus comes back, a skip link reaches the pad.
 const { test, before, after } = require("node:test");
 const assert = require("node:assert/strict");
-const { startServer, launch, newPage, startGame, typeMarks } = require("./harness.cjs");
+const { startServer, launch, newPage, startGame, typeMarks, finishGame } = require("./harness.cjs");
 
 let server;
 let browser;
@@ -89,3 +89,28 @@ test("during a game, Skip to pin pad is the Lanes view's first stop and lands in
   assert.deepEqual(api.errors, []);
   await page.context().close();
 });
+
+/** Finish a game, take the final card's rematch button from the keyboard, and wait for the new game. */
+async function rematchFromKeyboard(page, saveFirst) {
+  await startGame(page, server.url, ["Eric", "Dana"]);
+  await finishGame(page, 2);
+  if (saveFirst) {
+    await page.click("#save-btn");
+    await page.waitForSelector("#rematch-btn:text-is('Rematch')");
+  }
+  await page.focus("#rematch-btn");
+  await page.keyboard.press("Enter");
+  await page.waitForSelector("#final", { state: "hidden" });
+  await page.waitForSelector("#pad:not([hidden])");
+}
+
+for (const [label, saveFirst] of [["Save & rematch", false], ["Rematch", true]]) {
+  test(`after ${label}, focus is on the first bowler's frame 1 of the new game`, async () => {
+    const { page, api } = await newPage(browser);
+    await rematchFromKeyboard(page, saveFirst);
+    await page.waitForFunction(() => document.activeElement !== document.body, null, { timeout: 2000 });
+    assert.match(await focusedName(page), /^Eric, frame 1\b/);
+    assert.deepEqual(api.errors, []);
+    await page.context().close();
+  });
+}

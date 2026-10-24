@@ -194,6 +194,7 @@ function rematch(names, venue = "") {
   session.start(venue, names);
   show("lanes");
   showSheet();
+  ui.board.focusFrame(0, 0); // the button that started this is gone; don't strand focus on <body>
   toast("New game, same crew. Good luck!");
 }
 const final = initFinalCard({
