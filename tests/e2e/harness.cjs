@@ -39,7 +39,7 @@ const launch = () => chromium.launch();
  * Returns { page, api } where api.calls records every mocked request as { method, path, body }.
  */
 async function newPage(browser, opts = {}) {
-  const ctx = await browser.newContext({ viewport: opts.viewport ?? { width: 390, height: 844 }, colorScheme: opts.colorScheme ?? "light", serviceWorkers: opts.serviceWorkers ?? "block" });
+  const ctx = await browser.newContext({ viewport: opts.viewport ?? { width: 390, height: 844 }, colorScheme: opts.colorScheme ?? "light", locale: "en-US", timezoneId: "America/New_York", serviceWorkers: opts.serviceWorkers ?? "block" });
   const page = await ctx.newPage();
   const api = { calls: [], errors: [] };
   page.on("pageerror", (e) => api.errors.push(e.message));
