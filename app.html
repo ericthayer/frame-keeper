@@ -1,0 +1,93 @@
+<!-- head:start -->
+<title>Frame Keeper</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Retro bowling scorekeeper with shared match history and leaderboards.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Righteous&family=Shrikhand&display=swap">
+<link rel="stylesheet" href="src/styles.css">
+<!-- head:end -->
+<div class="app">
+  <header class="marquee">
+    <div class="marquee__inner">
+      <h1 class="marquee__title"><span class="marquee__frame">Frame</span> <span class="marquee__keeper">Keeper</span></h1>
+      <p class="marquee__tag">Lanes open · Shoes required</p>
+      <p class="sync" id="sync" data-kind="pending">Connecting…</p>
+    </div>
+    <div class="stripes" aria-hidden="true"><span></span><span></span><span></span></div>
+  </header>
+
+  <main class="main">
+    <section class="view" id="lanes" aria-labelledby="lanes-title">
+      <h2 class="sr-only" id="lanes-title" tabindex="-1">Lanes</h2>
+      <fk-setup id="setup"></fk-setup>
+
+      <div class="live" id="live" hidden>
+        <p class="nowup" id="nowup" aria-live="polite">
+          <span class="nowup__label">Up now</span>
+          <strong class="nowup__name" id="nowup-name"></strong>
+          <span class="nowup__detail" id="nowup-detail"></span>
+        </p>
+        <div class="edit-banner" id="edit-banner" role="status" hidden>
+          <span id="edit-text"></span>
+          <button type="button" class="btn btn--small btn--ghost" id="edit-cancel">Cancel</button>
+        </div>
+
+        <fk-scoreboard id="board" aria-label="Tonight's game"></fk-scoreboard>
+        <p class="live__tip">Tap a finished frame to fix it. Tap a name to change who's up.</p>
+
+        <div class="final" id="final" hidden>
+          <p class="final__eyebrow">Final</p>
+          <p class="final__winner" id="final-winner"></p>
+          <div class="final__actions">
+            <button type="button" class="btn btn--big" id="save-btn">Save to history</button>
+            <button type="button" class="btn btn--ghost" id="rematch-btn">Rematch</button>
+          </div>
+          <p class="final__status" id="save-status" aria-live="polite"></p>
+        </div>
+
+        <fk-pinpad id="pad"></fk-pinpad>
+
+        <div class="live__footer">
+          <button type="button" class="btn btn--quiet btn--small" id="quit-btn">End game</button>
+          <div class="confirm" id="quit-confirm" role="group" aria-label="Confirm end game" hidden>
+            <span>End this game? Unsaved scores are lost.</span>
+            <button type="button" class="btn btn--small btn--danger" id="quit-yes">End game</button>
+            <button type="button" class="btn btn--small btn--ghost" id="quit-no">Keep bowling</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="leaders" aria-labelledby="leaders-title" hidden>
+      <h2 class="view__title" id="leaders-title" tabindex="-1">Leaderboard</h2>
+      <p class="view__sub">Bragging rights, settled by the numbers.</p>
+      <fk-leaderboard id="leaderboard"></fk-leaderboard>
+    </section>
+
+    <section class="view" id="history" aria-labelledby="history-title" hidden>
+      <h2 class="view__title" id="history-title" tabindex="-1">Match History</h2>
+      <p class="view__sub">Every saved game, with the full score sheet.</p>
+      <fk-history id="history-list"></fk-history>
+    </section>
+  </main>
+
+  <nav class="tabbar" aria-label="Sections">
+    <button type="button" class="tabbar__btn" data-view="lanes">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c1.6 0 2.4 1.3 2.2 3-.1 1-.6 1.7-.6 2.6 0 1.2 2.4 3.4 2.4 7.4 0 3.3-1.4 6-4 7h0c-2.6-1-4-3.7-4-7 0-4 2.4-6.2 2.4-7.4 0-.9-.5-1.6-.6-2.6C9.6 3.3 10.4 2 12 2Z"/></svg>
+      <span>Lanes</span>
+    </button>
+    <button type="button" class="tabbar__btn" data-view="leaders">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v3h3v2a5 5 0 0 1-4.3 5A5 5 0 0 1 13 15.9V18h3v3H8v-3h3v-2.1A5 5 0 0 1 8.3 13 5 5 0 0 1 4 8V6h3V3Zm0 5H6a3 3 0 0 0 1 2.2V8Zm10 0v2.2A3 3 0 0 0 18 8h-1Z"/></svg>
+      <span>Leaders</span>
+    </button>
+    <button type="button" class="tabbar__btn" data-view="history">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h11l3 3v15H5V3Zm3 5v2h8V8H8Zm0 4v2h8v-2H8Zm0 4v2h5v-2H8Z"/></svg>
+      <span>History</span>
+    </button>
+  </nav>
+
+  <fk-celebrate id="celebrate"></fk-celebrate>
+  <p class="toast" id="toast" role="status" aria-live="polite"></p>
+</div>
+<script type="module" src="src/main.js"></script>
