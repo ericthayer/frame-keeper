@@ -227,8 +227,15 @@ body::after {
   padding: 4px 0; background: var(--walnut); color: #f4b746; font-family: var(--font-mono); font-size: .75rem; font-weight: 700; letter-spacing: .06em;
 }
 .board__name-h, .board__name { position: sticky; left: 0; z-index: 1; text-align: left; }
+/* Totals stay pinned to the right edge while the frames scroll. Collapsed borders don't travel with sticky cells, so the rule is a shadow. */
+.board__total-h, .board__total { position: sticky; right: 0; z-index: 1; width: 64px; text-align: center; box-shadow: inset 2px 0 0 var(--ink); }
+.board__total { background: var(--surface); border-top: 1px solid var(--line); padding: 4px; }
 .board__name-h { padding-left: 10px !important; }
-.board__name { background: var(--surface); border-right: 2px solid var(--ink); border-top: 1px solid var(--line); padding: 0; }
+/* scroll-margin: a row scrolled into view clears the pin pad, which rides 10px above the tab bar. */
+.board__name {
+  background: var(--surface); border-right: 2px solid var(--ink); border-top: 1px solid var(--line); padding: 0;
+  scroll-margin: 8px 0 calc(var(--pad-h, 0px) + var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + 18px);
+}
 .board__who {
   display: flex; align-items: center; gap: 6px; width: 100%; min-width: 92px; min-height: 58px; max-width: 120px; padding: 4px 8px;
   border: 0; background: transparent; text-align: left; font-size: .95rem; line-height: 1.1; overflow-wrap: break-word;
@@ -250,12 +257,19 @@ body::after {
 .mark.is-x { background: var(--walnut); color: #f4b746; border-color: var(--walnut); }
 .mark.is-spare { color: var(--orange); font-size: 1rem; }
 .running { display: block; padding: 4px 0 6px; text-align: center; font-size: 1.05rem; min-height: 1.6em; }
-.board__total-h, .board__total { width: 64px; text-align: center; border-left: 2px solid var(--ink); }
-.board__total { border-top: 1px solid var(--line); padding: 4px; }
 .board__score { display: block; font-family: var(--font-display); font-size: 1.5rem; line-height: 1.1; color: var(--orange); }
 .board__max { display: block; font-family: var(--font-mono); font-size: .68rem; color: var(--ink-soft); white-space: nowrap; }
 .is-winner .board__score { color: var(--avocado); }
 .crown { color: var(--gold); margin-right: 4px; }
+/* Compact rows (5+ bowlers, not up): still tappable, still showing name, marks and totals. */
+.is-compact .board__who, .is-compact .frame__btn { min-height: 0; }
+.is-compact .board__who { white-space: nowrap; overflow: hidden; }
+.is-compact .marks { height: 18px; }
+.is-compact .mark { height: 17px; font-size: .75rem; }
+.is-compact .running { padding: 0 0 2px; font-size: .9rem; line-height: 1.1; min-height: 1.1em; }
+.is-compact .board__total { padding: 2px 4px; }
+.is-compact .board__score { font-size: 1.15rem; }
+.is-compact .board__max { display: none; }
 
 /* ---------- Pin pad ---------- */
 .pad { display: grid; gap: 12px; padding: 14px; border-radius: 20px; background: var(--walnut); box-shadow: inset 0 -6px 0 rgb(0 0 0 / .25); }
