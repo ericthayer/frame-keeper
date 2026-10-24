@@ -67,3 +67,9 @@ export function emit(el, type, detail) {
  */
 export const formatDate = (iso) =>
   new Date(iso).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+
+/**
+ * @param {string} iso
+ * @returns {string} Local clock time, e.g. "8:19 PM".
+ */
+export const formatTime = (iso) => new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });

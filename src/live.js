@@ -13,6 +13,8 @@ const API = "/api/live/";
 const SHARE_KEY = "frame-keeper:share";
 const LETTERS = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // no I or O: easy to read aloud
 export const POLL_MS = 2000;
+/** An ended lane rarely comes back: check it less often. */
+const GONE_POLL_MS = 10000;
 
 /** @returns {string} */
 const randomCode = () => {
@@ -161,6 +163,7 @@ export class LiveHost {
 export function watchLane(code, { onUpdate, onGone, onError }) {
   let stopped = false;
   let last = "";
+  let gone = false;
   /** @type {ReturnType<typeof setTimeout> | undefined} */
   let timer;
   const tick = async () => {
@@ -168,9 +171,12 @@ export function watchLane(code, { onUpdate, onGone, onError }) {
     if (document.visibilityState === "visible") {
       try {
         const res = await fetch(API + code, { cache: "no-store", headers: { accept: "application/json" } });
-        if (res.status === 404) onGone();
-        else if (!res.ok) onError(await errorText(res));
+        if (res.status === 404) {
+          gone = true;
+          onGone();
+        } else if (!res.ok) onError(await errorText(res));
         else {
+          gone = false;
           const snap = /** @type {LiveSnapshot} */ (await res.json());
           if (snap.updatedAt !== last) {
             last = snap.updatedAt;
@@ -181,7 +187,7 @@ export function watchLane(code, { onUpdate, onGone, onError }) {
         onError("Lost signal. Retrying…");
       }
     }
-    if (!stopped) timer = setTimeout(tick, POLL_MS);
+    if (!stopped) timer = setTimeout(tick, gone ? GONE_POLL_MS : POLL_MS);
   };
   tick();
   return () => {
