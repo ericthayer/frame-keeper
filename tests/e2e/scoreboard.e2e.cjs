@@ -70,7 +70,11 @@ async function misnamedFrames(page) {
     const btn = buttons.nth(i);
     const shown = await btn.evaluate((b) => [...b.querySelectorAll(".mark, .running")].map((e) => e.textContent.trim()).filter(Boolean));
     const name = (await btn.ariaSnapshot()).match(/button "(.*)"/)?.[1] ?? "";
-    if (shown.some((t) => !name.includes(t))) bad.push({ shown, name });
+    // Look only past "Eric, frame 1:" so a mark like "1" can't match the frame number, and keep visible order.
+    const words = name.slice(name.indexOf(":") + 1).split(/[\s,]+/).filter(Boolean);
+    let at = 0;
+    const inOrder = shown.length === 0 || name.includes(":") && shown.every((t) => (at = words.indexOf(t, at) + 1) > 0);
+    if (!inOrder) bad.push({ shown, name });
   }
   return bad;
 }
