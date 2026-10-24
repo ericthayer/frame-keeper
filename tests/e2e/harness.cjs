@@ -63,9 +63,14 @@ async function newPage(browser, opts = {}) {
   return { page, api, ctx };
 }
 
-/** Splash → Start → add bowlers → Roll it. Waits for the pin pad. */
+/** Open the app, then set up and start a game. Waits for the pin pad. */
 async function startGame(page, base, names) {
   await page.goto(base + "/");
+  await setupGame(page, names);
+}
+
+/** On an already-open app: Splash → Start → add bowlers → Roll it. Waits for the pin pad. */
+async function setupGame(page, names) {
   await page.click("#splash-start");
   for (const n of names) {
     await page.fill("#fk-bowler-name", n);
@@ -96,4 +101,4 @@ async function runAxe(page, tags = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", 
   return page.evaluate(async (t) => (await window.axe.run(document, { runOnly: { type: "tag", values: t } })).violations, tags);
 }
 
-module.exports = { ROOT, DIST, startServer, launch, newPage, startGame, typeMarks, finishGame, runAxe };
+module.exports = { ROOT, DIST, startServer, launch, newPage, startGame, setupGame, typeMarks, finishGame, runAxe };

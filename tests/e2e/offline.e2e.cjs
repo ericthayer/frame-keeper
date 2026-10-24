@@ -2,7 +2,7 @@
 // /api/* is never answered from the offline cache. Service workers are allowed here.
 const { test, before, after } = require("node:test");
 const assert = require("node:assert/strict");
-const { startServer, launch, newPage, typeMarks } = require("./harness.cjs");
+const { startServer, launch, newPage, setupGame, typeMarks } = require("./harness.cjs");
 
 let server;
 let browser;
@@ -40,13 +40,7 @@ test("after one online visit, reloading offline still shows the splash and the a
 
 test("a game in progress is still on screen after reloading offline", async () => {
   const { page, ctx, api } = await visitOnline();
-  await page.click("#splash-start");
-  for (const name of ["Eric", "Dana"]) {
-    await page.fill("#fk-bowler-name", name);
-    await page.keyboard.press("Enter");
-  }
-  await page.click("text=Roll it!");
-  await page.waitForSelector("#pad:not([hidden])");
+  await setupGame(page, ["Eric", "Dana"]);
   await typeMarks(page, "81 72");
   await ctx.setOffline(true);
   await page.reload();
