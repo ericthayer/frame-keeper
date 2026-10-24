@@ -38,6 +38,7 @@ const ui = {
   splashStart: /** @type {HTMLButtonElement} */ ($("splash-start")),
   board: /** @type {import("./components/fk-scoreboard.js").FkScoreboard} */ ($("board")),
   pad: /** @type {import("./components/fk-pinpad.js").FkPinpad} */ ($("pad")),
+  skipPad: $("skip-pad"),
   nowName: $("nowup-name"),
   nowDetail: $("nowup-detail"),
   nowUp: $("nowup"),
@@ -114,6 +115,7 @@ function renderGame() {
   ui.pad.fresh = t?.fresh ?? true;
   ui.pad.canUndo = session.canUndo || !!session.edit;
   ui.pad.hidden = complete && !session.edit;
+  ui.skipPad.hidden = ui.pad.hidden;
   if (t && !complete) ui.pad.label = `${session.edit ? "Fixing " : ""}${g.bowlers[t.bowler].name} · F${t.frame + 1} · Ball ${t.ball + 1}`;
   else if (t && session.edit) ui.pad.label = `Fixing ${g.bowlers[t.bowler].name} · F${t.frame + 1}`;
 
@@ -150,6 +152,10 @@ function celebrateMoment(moment, who) {
   else if (moment === "gutter") ui.celebrate.show(who ? `Gutter, ${who}` : "Gutter ball", "gutter");
   else if (moment === "final") ui.celebrate.show(session.game ? winnerLine(session.game.bowlers) : "Final!", "big");
 }
+ui.skipPad.addEventListener("click", (e) => {
+  e.preventDefault(); // a real jump to #fk-type would reroute the app
+  /** @type {HTMLElement | null} */ (ui.pad.querySelector("#fk-type"))?.focus();
+});
 ui.pad.addEventListener("fk-undo", () => session.undo());
 ui.pad.addEventListener("fk-type", (e) => {
   const { text } = /** @type {CustomEvent<{ text: string }>} */ (e).detail;

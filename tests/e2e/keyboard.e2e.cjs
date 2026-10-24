@@ -63,3 +63,29 @@ test("after the Cancel button cancels a fix, focus is back on the frame that was
   assert.deepEqual(await frameNames(page), before);
   await page.context().close();
 });
+
+/** Width and height the focused element takes up on screen. */
+const focusedSize = (page) => page.evaluate(() => {
+  const r = /** @type {Element} */ (document.activeElement).getBoundingClientRect();
+  return { width: r.width, height: r.height };
+});
+
+test("during a game, Skip to pin pad is the Lanes view's first stop and lands in the typed-marks box", async () => {
+  const { page, api } = await newPage(browser);
+  await startGame(page, server.url, ["Eric", "Dana"]);
+  const skip = page.locator("#view-lanes a", { hasText: "Skip to pin pad" });
+  const hidden = await skip.boundingBox({ timeout: 2000 });
+  assert.ok(hidden && hidden.width <= 1 && hidden.height <= 1, "visually hidden until focused");
+
+  await page.focus("#lanes-title");
+  await page.keyboard.press("Tab");
+  assert.equal(await page.evaluate(() => document.activeElement?.textContent?.trim()), "Skip to pin pad");
+  const shown = await focusedSize(page);
+  assert.ok(shown.width > 40 && shown.height > 20, "visible once focused");
+
+  await page.keyboard.press("Enter");
+  assert.equal(await page.evaluate(() => document.activeElement?.id), "fk-type");
+  assert.equal(new URL(page.url()).hash, "#lanes");
+  assert.deepEqual(api.errors, []);
+  await page.context().close();
+});
