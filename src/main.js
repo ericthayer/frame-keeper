@@ -39,6 +39,7 @@ const ui = {
   board: /** @type {import("./components/fk-scoreboard.js").FkScoreboard} */ ($("board")),
   pad: /** @type {import("./components/fk-pinpad.js").FkPinpad} */ ($("pad")),
   skipPad: $("skip-pad"),
+  padInput: $("fk-type"), // built by <fk-pinpad> when its module defines it, above
   nowName: $("nowup-name"),
   nowDetail: $("nowup-detail"),
   nowUp: $("nowup"),
@@ -154,7 +155,7 @@ function celebrateMoment(moment, who) {
 }
 ui.skipPad.addEventListener("click", (e) => {
   e.preventDefault(); // a real jump to #fk-type would reroute the app
-  /** @type {HTMLElement | null} */ (ui.pad.querySelector("#fk-type"))?.focus();
+  ui.padInput.focus();
 });
 ui.pad.addEventListener("fk-undo", () => session.undo());
 ui.pad.addEventListener("fk-type", (e) => {
