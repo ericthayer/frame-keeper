@@ -1,10 +1,15 @@
-// Wraps the artifact page (app.html) in a full document for Netlify and copies src/.
-// No bundler: the browser loads native ES modules straight from /src.
-import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+// Wraps the artifact page (app.html) in a full document for Netlify and bundles the src/
+// scripts and stylesheets it references into content-hashed files under dist/assets/.
+// The Claude artifact keeps loading app.html's unbundled ES modules straight from src/.
+import { readFile, rm, writeFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import { build } from "esbuild";
 
 const root = new URL("../", import.meta.url);
 const dist = new URL("dist/", root);
 const page = await readFile(new URL("app.html", root), "utf8");
+const srcRef = /\b(src|href)="(src\/[^"]+\.(?:js|css))"/g;
+const entries = [...new Set(Array.from(page.matchAll(srcRef), (m) => m[2]))];
 
 const [, headBlock = "", body = page] = page.match(/<!-- head:start -->([\s\S]*?)<!-- head:end -->([\s\S]*)/) ?? [];
 // Same reset the Claude artifact skeleton provides, so both hosts render alike.
@@ -28,7 +33,17 @@ ${body.trim()}
 `;
 
 await rm(dist, { recursive: true, force: true });
-await mkdir(dist, { recursive: true });
-await writeFile(new URL("index.html", dist), html);
-await cp(new URL("src/", root), new URL("src/", dist), { recursive: true });
-console.log("Built dist/index.html");
+const { metafile } = await build({
+  absWorkingDir: fileURLToPath(root),
+  entryPoints: entries,
+  outdir: "dist/assets",
+  entryNames: "[name]-[hash]",
+  bundle: true,
+  minify: true,
+  format: "esm",
+  target: "es2022",
+  metafile: true,
+});
+const hashed = new Map(Object.entries(metafile.outputs).flatMap(([out, { entryPoint }]) => (entryPoint ? [[entryPoint, out.replace(/^dist\//, "")]] : [])));
+await writeFile(new URL("index.html", dist), html.replace(srcRef, (_, attr, url) => `${attr}="${hashed.get(url)}"`));
+console.log(`Built dist/index.html with ${[...hashed.values()].join(", ")}`);
