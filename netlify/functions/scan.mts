@@ -21,7 +21,7 @@ const ScanSchema = z.object({
   ),
 });
 
-const PROMPT = `This photo should show a ten-pin bowling score display or score sheet at the end of a game.
+const PROMPT = `This photo should show a ten-pin bowling score display or score sheet, at any point in a game (frames not bowled yet are blank).
 Read every bowler's game and convert the marks to pins knocked down per ball.
 
 Notation: "X" = strike (10). "/" = spare: the pins left standing after the first ball. "-", "G", "F" or a blank ball = 0. A digit is that many pins; split markers (circles, "S", colored digits) still count as the digit.
@@ -29,7 +29,8 @@ Notation: "X" = strike (10). "/" = spare: the pins left standing after the first
 Output, for each bowler top to bottom:
 - name exactly as shown (often abbreviated).
 - frames: one array per frame, pins per ball. Frames 1-9: a strike is [10], otherwise two balls, e.g. 7/ is [7,3], 9- is [9,0]. Frame 10 has three balls after a strike or spare ([10,10,10], [7,3,8], [10,4,6]) and two otherwise.
-- printed_total: the final total shown for that bowler, or null if none is visible.
+- printed_total: the latest total shown for that bowler (the running total mid-game), or null if none is visible.
+Stop each bowler's frames where the blank, unbowled frames begin; include a frame in progress with just the balls bowled so far.
 
 If you cannot read a ball with confidence, stop that bowler's frames at the last frame you are sure of and say which frame in notes. Never guess to make the totals add up.
 Set is_scoreboard to false (with an empty bowlers list) if the photo isn't a bowling score display.`;
@@ -108,7 +109,8 @@ export default async (req: Request): Promise<Response> => {
         total,
         complete,
         printedTotal: b.printed_total,
-        matches: b.printed_total === null ? null : complete && b.printed_total === total,
+        // Mid-game, the display's running total should equal our last resolved total.
+        matches: b.printed_total === null ? null : b.printed_total === total,
       };
     });
     return json({ bowlers, notes: scan.notes.slice(0, 400) });

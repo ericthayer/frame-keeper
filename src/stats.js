@@ -55,6 +55,26 @@ export const bowlerKey = (name) => name.trim().toLowerCase().replace(/\s+/g, " "
 export const cleanName = (name) => name.replace(/\s+/g, " ").trim().slice(0, MAX_NAME);
 
 /**
+ * Match a name read off an alley display ("ERI", "eric t") to a bowler in the game.
+ * Exact match first, then either name starting with the other (2+ letters).
+ * @param {string} read
+ * @param {string[]} names
+ * @param {Set<number>} [taken] Indexes already matched to another scanned row.
+ * @returns {number} Index into names, or -1.
+ */
+export function matchBowler(read, names, taken = new Set()) {
+  /** @param {string} s */
+  const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const r = norm(read);
+  if (!r) return -1;
+  const free = names.map((n, i) => ({ n: norm(n), i })).filter((x) => !taken.has(x.i));
+  const exact = free.find((x) => x.n === r);
+  if (exact) return exact.i;
+  const partial = free.find((x) => r.length >= 2 && x.n.length >= 2 && (x.n.startsWith(r) || r.startsWith(x.n)));
+  return partial ? partial.i : -1;
+}
+
+/**
  * Coerce untrusted storage data into a SavedGame, or null if it is not one.
  * @param {unknown} raw
  * @returns {SavedGame | null}
