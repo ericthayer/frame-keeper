@@ -201,6 +201,24 @@ button:disabled { cursor: not-allowed; }
 .key--spare { background: #c4471a; color: #fff6e3; box-shadow: 0 5px 0 #6e220a; font-family: var(--font-display); }
 .key--gutter { background: #b9a07c; }
 
+/* ---------- Live lanes ---------- */
+.share { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.share__panel { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.live-chip {
+  display: inline-flex; align-items: center; gap: 8px; margin: 0; padding: 6px 12px; border-radius: 999px;
+  background: var(--walnut); color: #f4b746; font-family: var(--font-mono); font-size: .8rem; font-weight: 700; letter-spacing: .12em;
+}
+.live-chip::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: #e2462a; animation: on-air 1.4s ease-in-out infinite; }
+@keyframes on-air { 50% { opacity: .25; } }
+.watch-form { display: grid; gap: 6px; padding: 16px 20px; border-radius: var(--radius); border: 2px dashed var(--ink-soft); }
+.watch-form input { text-transform: uppercase; letter-spacing: .2em; }
+.watch { display: grid; gap: 14px; }
+.watch > * { min-width: 0; }
+.watch__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.watch .view__sub { margin: 0; }
+.watch__final { text-align: center; }
+.watch__status { margin: 0; font-family: var(--font-mono); font-size: .8rem; color: var(--ink-soft); }
+
 /* ---------- Final ---------- */
 .final { display: grid; gap: 10px; justify-items: center; padding: 22px 16px; text-align: center; border-radius: var(--radius); background: var(--surface); border: 2px solid var(--ink); box-shadow: 6px 6px 0 var(--orange); }
 .final__eyebrow { margin: 0; font-family: var(--font-mono); font-weight: 700; letter-spacing: .3em; text-transform: uppercase; color: var(--ink-soft); }
@@ -319,5 +337,6 @@ button:disabled { cursor: not-allowed; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: .01ms !important; scroll-behavior: auto !important; }
   .celebrate.is-on .celebrate__sign, .celebrate[data-tone="big"].is-on .celebrate__sign { animation: fade 1.6s ease both; }
+  .live-chip::before { animation: none; }
   @keyframes fade { 0%, 100% { opacity: 0; } 15%, 85% { opacity: 1; } }
 }
