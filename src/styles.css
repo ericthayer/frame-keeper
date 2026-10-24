@@ -509,6 +509,7 @@ select.scan__name { appearance: auto; }
   .live > * { grid-column: 1; }
   /* Span the five rows always shown in a game (now up, tools, sheet, tip, footer) so no empty row adds a gap. */
   .live .pad { grid-column: 2; grid-row: 1 / span 5; top: 8px; bottom: auto; }
+  .live .key { min-height: 44px; } /* fits the whole pad, Undo included, between the top and the tab bar */
   /* The pad no longer covers the bottom of the sheet, so a row scrolled into view only clears the tab bar. */
   .board__name { scroll-margin-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + 8px); }
 }

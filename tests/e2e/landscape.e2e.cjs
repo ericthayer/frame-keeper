@@ -17,7 +17,7 @@ after(async () => {
 const LANDSCAPE = { width: 667, height: 375 };
 
 /**
- * What of the active row (its name and Total cells) and the 12 pin keys is not fully visible:
+ * What of the active row (its name and Total cells), the 12 pin keys and Undo is not fully visible:
  * outside the viewport, under the tab bar, or (for the row) under the pin pad.
  * @param {import("playwright").Page} page
  */
@@ -42,12 +42,13 @@ async function hiddenParts(page) {
       hidden: [
         ...cells.filter((c) => out(c) || underPad(c)).map((c) => `active row ${c.className}`),
         ...keys.filter(out).map((k) => `key ${k.dataset.key}`),
+        ...(out(document.querySelector("#pad .pad__undo")) ? ["undo"] : []),
       ],
     };
   });
 }
 
-test("at 667x375 the active row and all 12 pin keys are visible together, turn after turn", async () => {
+test("at 667x375 the active row, all 12 pin keys and Undo are visible together, turn after turn", async () => {
   const { page, api } = await newPage(browser, { viewport: LANDSCAPE });
   await startGame(page, server.url, ["Eric", "Dana", "Sam"]);
   await page.waitForTimeout(300);
