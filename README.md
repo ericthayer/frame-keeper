@@ -21,10 +21,10 @@ A 70s-alley bowling scorekeeper for league night. It scores 10-frame games, save
 
 ## Architecture
 
-The app is plain JavaScript using Web Components and native ES modules, with no bundler or framework. Types are checked by `tsc` through JSDoc (`checkJs`, `strict`).
+The app is plain JavaScript using Web Components and native ES modules, with no framework. The Claude artifact loads the modules unbundled; the Netlify build bundles them with esbuild into content-hashed files under `dist/assets/`. Types are checked by `tsc` through JSDoc (`checkJs`, `strict`).
 
 ```
-app.html                 Page shell (published as-is to Claude; wrapped for Netlify by scripts/build.mjs)
+app.html                 Page shell (published as-is to Claude; wrapped and bundled for Netlify by scripts/build.mjs)
 src/scoring.js           Pure ten-pin scoring engine (unit tested)
 src/stats.js             Saved-game model, validation, leaderboard aggregation
 src/game.js              Live session: turn order, undo, frame edits, autosave
