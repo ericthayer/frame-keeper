@@ -18,6 +18,7 @@ import { parseGame } from "./stats.js";
  * @property {(onChange: (games: SavedGame[]) => void, onError: (msg: string) => void) => () => void} watch
  * @property {(game: SavedGame) => Promise<void>} save
  * @property {(id: string) => Promise<void>} remove
+ * @property {() => Promise<void>} refresh  Re-read history now (after photo changes).
  */
 
 /**
@@ -53,6 +54,7 @@ function claudeStore(db) {
     },
     save: (game) => games.doc(game.id).set({ ...game }),
     remove: (id) => games.doc(id).delete(),
+    refresh: async () => {},
   };
 }
 
@@ -99,6 +101,7 @@ function netlifyStore() {
       await check(await fetch(`${API}/${encodeURIComponent(id)}`, { method: "DELETE" }));
       await refreshNow();
     },
+    refresh: () => refreshNow(),
   };
 }
 /** @type {() => Promise<void>} */
@@ -143,6 +146,7 @@ function localStore() {
     async remove(id) {
       write(read().filter((g) => parseGame(g)?.id !== id));
     },
+    refresh: async () => {},
   };
 }
 

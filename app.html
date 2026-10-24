@@ -84,6 +84,7 @@
         </figcaption>
         <button type="button" class="btn btn--big btn--start" id="splash-start">Start</button>
       </figure>
+      <fk-scan id="scan" hidden></fk-scan>
       <form class="watch-form" id="watch-form" aria-describedby="watch-hint" novalidate hidden>
         <label class="field__label" for="watch-code">Following someone else's lane?</label>
         <div class="field__row field">
@@ -126,6 +127,7 @@
             <button type="button" class="btn btn--ghost" id="rematch-btn">Rematch</button>
           </div>
           <p class="final__status" id="save-status" aria-live="polite"></p>
+          <fk-sendoff id="sendoff" hidden></fk-sendoff>
         </div>
 
         <fk-pinpad id="pad"></fk-pinpad>

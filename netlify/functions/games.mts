@@ -34,7 +34,11 @@ export default async (req: Request, context: Context): Promise<Response> => {
     const game = parseGame(raw);
     if (!game) return json({ error: "That doesn't look like a finished 10-frame game." }, 422);
     // Key leads with the timestamp so a reverse key sort is newest-first.
-    await store.setJSON(`${game.playedAt}_${game.id}`, game);
+    // Photos are attached later through /api/photos; never let a save drop them.
+    const { blobs } = await store.list();
+    const prior = blobs.find((b) => b.key.endsWith(`_${game.id}`));
+    const kept = prior ? ((await store.get(prior.key, { type: "json" })) as { photos?: string[] } | null)?.photos : undefined;
+    await store.setJSON(`${game.playedAt}_${game.id}`, kept?.length ? { ...game, photos: kept } : game);
     return json({ ok: true, id: game.id }, 201);
   }
 
@@ -42,6 +46,10 @@ export default async (req: Request, context: Context): Promise<Response> => {
     const { blobs } = await store.list();
     const match = blobs.find((b) => b.key.endsWith(`_${id}`));
     if (match) await store.delete(match.key);
+    // A deleted game takes its photos with it.
+    const photoStore = getStore({ name: scope.replace(/^games/, "photos"), consistency: "strong" });
+    const { blobs: photos } = await photoStore.list({ prefix: `${id}/` });
+    await Promise.all(photos.map((p) => photoStore.delete(p.key)));
     return json({ ok: true });
   }
 
